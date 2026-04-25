@@ -116,6 +116,7 @@ export function BookingsTab({ bookings }: Props) {
             <DetailRow label="Duration" value={selected.rental_duration} />
             <DetailRow label="Driving mode" value={selected.driving_mode} />
             <DetailRow label="Pickup location" value={selected.pickup_location ?? "—"} />
+            <DetailRow label="Destination" value={selected.destination ?? "—"} />
             <DetailRow label="Drop-off" value={selected.dropoff_location ?? "—"} />
             {selected.special_requests && (
               <DetailRow label="Special requests" value={selected.special_requests} />

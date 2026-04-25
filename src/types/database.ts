@@ -50,6 +50,7 @@ export type Booking = {
   return_at: string;
   pickup_location: string | null;
   dropoff_location: string | null;
+  destination: string | null;
   rental_duration: string;
   driving_mode: string;
   special_requests: string | null;

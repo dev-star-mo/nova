@@ -34,6 +34,7 @@ export function BookingModal() {
   const [returnAt, setReturnAt] = useState("");
   const [pickupLoc, setPickupLoc] = useState("");
   const [dropLoc, setDropLoc] = useState("");
+  const [destination, setDestination] = useState("");
   const [driving, setDriving] = useState<string>(DRIVING[0]);
   const [special, setSpecial] = useState("");
   const [busy, setBusy] = useState(false);
@@ -108,7 +109,8 @@ export function BookingModal() {
       !pickupAt ||
       !returnAt ||
       !pickupLoc.trim() ||
-      !dropLoc.trim()
+      !dropLoc.trim() ||
+      !destination.trim()
     ) {
       setError("Please complete all required fields highlighted in red.");
       return;
@@ -133,6 +135,7 @@ export function BookingModal() {
           return_at: r.toISOString(),
           pickup_location: pickupLoc,
           dropoff_location: dropLoc,
+          destination: destination,
           rental_duration: durationLabel,
           driving_mode: driving,
           special_requests: special,
@@ -282,6 +285,17 @@ export function BookingModal() {
               </div>
             </div>
           )}
+
+          {/* Destination */}
+          <div>
+            <label className="text-sm font-medium text-slate-700">Destination <span className="text-red-500">*</span></label>
+            <input
+              className={`mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none ${fieldErr(destination)}`}
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              placeholder="e.g. Mombasa, Naivasha, etc."
+            />
+          </div>
 
           {/* Pickup location */}
           <div>

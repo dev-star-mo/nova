@@ -44,6 +44,7 @@ export async function PATCH(
     return_at?: string;
     pickup_location?: string;
     dropoff_location?: string;
+    destination?: string;
     driving_mode?: string;
     special_requests?: string;
   };
@@ -53,6 +54,7 @@ export async function PATCH(
     return_at,
     pickup_location,
     dropoff_location,
+    destination,
     driving_mode,
     special_requests,
   } = body;
@@ -101,6 +103,7 @@ export async function PATCH(
       return_at,
       pickup_location: pickup_location ?? null,
       dropoff_location: dropoff_location ?? null,
+      destination: destination !== undefined ? String(destination).trim() : undefined,
       driving_mode: effectiveDriving,
       special_requests: special_requests ?? null,
       total_amount: total,

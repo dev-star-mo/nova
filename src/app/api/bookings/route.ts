@@ -28,13 +28,14 @@ export async function POST(req: Request) {
     return_at,
     pickup_location,
     dropoff_location,
+    destination,
     rental_duration,
     driving_mode,
     special_requests,
     total_amount,
   } = body;
 
-  if (!car_id || !full_name || !phone || !pickup_at || !return_at || !rental_duration || !driving_mode) {
+  if (!car_id || !full_name || !phone || !pickup_at || !return_at || !destination || !rental_duration || !driving_mode) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -65,6 +66,7 @@ export async function POST(req: Request) {
       return_at,
       pickup_location: pickup_location || null,
       dropoff_location: dropoff_location || null,
+      destination: String(destination).trim(),
       rental_duration: String(rental_duration),
       driving_mode: String(driving_mode),
       special_requests: special_requests || null,
