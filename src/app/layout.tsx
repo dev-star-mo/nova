@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SiteShell } from "@/components/layout/SiteShell";
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata: Metadata = {
   title: "NovaDrive CarLink Solutions",
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="min-h-screen font-sans antialiased">
         <SiteShell>{children}</SiteShell>
+        <Analytics />
       </body>
     </html>
   );
