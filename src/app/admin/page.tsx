@@ -12,7 +12,7 @@ export default async function AdminPage() {
     .from("bookings")
     .select(`
       id, user_id, car_id, full_name, phone, email,
-      pickup_at, return_at, pickup_location, dropoff_location,
+      pickup_at, return_at, pickup_location, dropoff_location, destination,
       rental_duration, driving_mode, special_requests,
       total_amount, status, paystack_reference, created_at,
       cars ( make, model )
@@ -77,6 +77,7 @@ export default async function AdminPage() {
       return_at: raw.return_at,
       pickup_location: raw.pickup_location,
       dropoff_location: raw.dropoff_location,
+      destination: raw.destination,
       rental_duration: raw.rental_duration,
       driving_mode: raw.driving_mode,
       special_requests: raw.special_requests,

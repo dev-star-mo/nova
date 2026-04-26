@@ -14,7 +14,7 @@ export default async function MyBookingsPage() {
   const { data: rows } = await supabase
     .from("bookings")
     .select(
-      "id, status, total_amount, pickup_at, return_at, car_id, pickup_location, dropoff_location, driving_mode, special_requests, created_at"
+      "id, status, total_amount, pickup_at, return_at, car_id, pickup_location, dropoff_location, destination, driving_mode, special_requests, created_at"
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
