@@ -10,7 +10,7 @@ export function AboutSection() {
           customer service. Drive with confidence, convenience, and peace of mind — NovaDrive has you
           covered every mile of the way.
         </p>
-        <div className="mx-auto mt-14 max-w-2xl">
+        {/*<div className="mx-auto mt-14 max-w-2xl">
           <h3 className="text-left font-display text-2xl font-bold text-ink">Why choose NovaDrive</h3>
           <p className="mt-2 text-left text-slate-600">We are the best.</p>
           <ul className="mt-6 list-disc space-y-2 pl-6 text-left text-slate-700">
@@ -20,7 +20,7 @@ export function AboutSection() {
             <li>Competitive pricing</li>
             <li>Flexible rental periods</li>
           </ul>
-        </div>
+        </div>*/}
       </div>
     </section>
   );
