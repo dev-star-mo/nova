@@ -31,7 +31,7 @@ export function HeroSearch() {
       <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-28 lg:px-8 lg:py-32">
         <div className="max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-widest text-brand-200">
-            Logistics & mobility
+            Rent & drive it!
           </p>
           <h1 className="mt-3 font-display text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
             NovaDrive CarLink Solutions

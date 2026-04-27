@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useUserSession } from "@/components/providers/user-session-provider";
@@ -66,9 +67,13 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="flex min-w-0 items-center gap-2 shrink-0">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-700 text-lg font-bold text-white shadow-md">
-            N
-          </span>
+          <Image
+            src="/logo.png"
+            alt="NovaDrive Logo"
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 rounded-xl object-contain shadow-md"
+          />
           <span className="font-display min-w-0 leading-tight">
             <span className="block text-sm font-bold text-ink sm:text-lg">NovaDrive</span>
             <span className="block text-xs font-medium text-slate-500 sm:text-sm">

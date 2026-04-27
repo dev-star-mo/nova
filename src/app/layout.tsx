@@ -5,6 +5,9 @@ import { SiteShell } from "@/components/layout/SiteShell";
 export const metadata: Metadata = {
   title: "NovaDrive CarLink Solutions",
   description: "Modern car rental and logistics mobility across Kenya.",
+  icons: {
+    icon: "/logo.png",
+  },
 };
 
 export default function RootLayout({
