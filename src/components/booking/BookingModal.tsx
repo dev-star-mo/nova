@@ -149,7 +149,8 @@ export function BookingModal() {
         return;
       }
       closeBooking();
-      window.location.href = `/checkout?booking=${encodeURIComponent(json.id)}`;
+      // Redirect to contract page so customer signs agreement before payment
+      window.location.href = `/contract?booking=${encodeURIComponent(json.id)}`;
     } catch {
       setError("Something went wrong.");
     }
@@ -366,7 +367,7 @@ export function BookingModal() {
           disabled={busy || total <= 0}
           onClick={() => void submit()}
         >
-          {busy ? "Saving…" : "Continue to payment"}
+          {busy ? "Saving…" : "Proceed to checkout"}
         </button>
       </div>
     </div>

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/restore-units",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
