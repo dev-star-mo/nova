@@ -57,6 +57,13 @@ export type Booking = {
   total_amount: number;
   status: string;
   paystack_reference: string | null;
+  id_number?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  signature_name?: string | null;
+  profile_photo_url?: string | null;
+  id_front_url?: string | null;
+  id_back_url?: string | null;
   created_at: string;
 };
 

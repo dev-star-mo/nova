@@ -503,7 +503,7 @@ export function MyBookingsClient({
                 )}
                 {b.status !== "paid" && (
                   <Link
-                    href={`/checkout?booking=${b.id}`}
+                    href={`/contract?booking=${b.id}`}
                     className="inline-flex items-center text-sm font-semibold text-brand-600 hover:underline"
                   >
                     Continue to payment →

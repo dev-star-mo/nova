@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -24,6 +24,13 @@ type BookingRow = {
   total_amount: number;
   status: string;
   car_id: string;
+  id_number?: string | null;
+  emergency_contact_name?: string | null;
+  emergency_contact_phone?: string | null;
+  signature_name?: string | null;
+  profile_photo_url?: string | null;
+  id_front_url?: string | null;
+  id_back_url?: string | null;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -57,14 +64,17 @@ export function ContractClient({
   // ── Text / field state ────────────────────────────────────────────────────
 
   // Renter's national ID or passport number (required for the agreement)
-  const [idNumber, setIdNumber] = useState("");
+  const [idNumber, setIdNumber] = useState(booking.id_number || "");
 
   // Emergency contact name and phone number
-  const [emergencyName, setEmergencyName] = useState("");
-  const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [emergencyName, setEmergencyName] = useState(booking.emergency_contact_name || "");
+  const [emergencyPhone, setEmergencyPhone] = useState(booking.emergency_contact_phone || "");
 
-  // Digital signature — renter types their full name to sign
-  const [signature, setSignature] = useState("");
+  // No local signature capture: signing will happen inside Zoho embedded iframe
+  // Zoho embedded signing URL (if user chooses to sign via Zoho)
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+  const [zohoLoading, setZohoLoading] = useState(false);
+  const [zohoError, setZohoError] = useState<string | null>(null);
 
   // ── Acknowledgement checkboxes ────────────────────────────────────────────
   // All must be ticked before the "Proceed to Payment" button becomes active
@@ -83,6 +93,10 @@ export function ContractClient({
   const [docFront, setDocFront] = useState<File | null>(null);
   const [docBack, setDocBack] = useState<File | null>(null);
 
+  const existingProfile = booking.profile_photo_url;
+  const existingFront = booking.id_front_url;
+  const existingBack = booking.id_back_url;
+
   // Shows "Uploading documents…" text on the proceed button while uploading
   const [uploading, setUploading] = useState(false);
 
@@ -94,8 +108,10 @@ export function ContractClient({
   const carLabel = car ? `${car.make} ${car.model} (${car.year})` : "Vehicle";
 
   // Count how many of the 3 document slots have been filled
-  const docSlots = [profilePhoto, docFront, docBack];
-  const docCount = docSlots.filter(Boolean).length;
+  const hasProfile = profilePhoto || existingProfile;
+  const hasFront = docFront || existingFront;
+  const hasBack = docBack || existingBack;
+  const docCount = [hasProfile, hasFront, hasBack].filter(Boolean).length;
   const allDocsSelected = docCount === 3;
 
   // All six acknowledgement boxes must be ticked
@@ -107,7 +123,7 @@ export function ContractClient({
     idNumber.trim() !== "" &&
     emergencyName.trim() !== "" &&
     emergencyPhone.trim() !== "" &&
-    signature.trim() !== "" &&
+    allDocsSelected &&
     allDocsSelected &&
     allAcknowledged;
 
@@ -126,12 +142,17 @@ export function ContractClient({
     const path = `${booking.id}/${slot}.${ext}`;
     const { error } = await supabase.storage
       .from("contract-docs")
-      .upload(path, file, { upsert: true });
+      .upload(path, file, {
+        upsert: true,
+        contentType: file.type || "image/jpeg"
+      });
     if (error) throw new Error(`Upload failed for ${slot}: ${error.message}`);
     // Return the public URL for future reference (admin can view docs)
     const { data } = supabase.storage.from("contract-docs").getPublicUrl(path);
     return data.publicUrl;
   }
+
+  // (no local signature upload — signing is handled by Zoho embedded session)
 
   // ── Submit handler ────────────────────────────────────────────────────────
 
@@ -148,21 +169,71 @@ export function ContractClient({
     setUploading(true);
     try {
       // Upload all three document images concurrently to Supabase Storage
-      await Promise.all([
-        uploadDoc(profilePhoto!, "profile-photo"),
-        uploadDoc(docFront!, "document-front"),
-        uploadDoc(docBack!, "document-back"),
+      const [pUrl, fUrl, bUrl] = await Promise.all([
+        profilePhoto ? uploadDoc(profilePhoto, "profile-photo") : Promise.resolve(existingProfile!),
+        docFront ? uploadDoc(docFront, "document-front") : Promise.resolve(existingFront!),
+        docBack ? uploadDoc(docBack, "document-back") : Promise.resolve(existingBack!),
       ]);
+
+      // Save renter details and document URLs to the database
+      const { error: updateError } = await supabase
+        .from("bookings")
+        .update({
+          id_number: idNumber,
+          emergency_contact_name: emergencyName,
+          emergency_contact_phone: emergencyPhone,
+          profile_photo_url: pUrl,
+          id_front_url: fUrl,
+          id_back_url: bUrl,
+        })
+        .eq("id", booking.id);
+
+      if (updateError) throw updateError;
+
+      // All data saved — proceed to the existing Paystack checkout page
+      router.push(`/checkout?booking=${encodeURIComponent(booking.id)}`);
     } catch (err) {
-      // If any upload fails, surface the error and abort navigation
+      console.error("Submission error:", err);
+      // If any upload or update fails, surface the error and abort navigation
       setValidationMsg(
-        err instanceof Error ? err.message : "Document upload failed. Please try again."
+        err instanceof Error ? err.message : "Submission failed. Please try again."
       );
       setUploading(false);
-      return;
     }
-    // All documents uploaded — proceed to the existing Paystack checkout page
-    router.push(`/checkout?booking=${encodeURIComponent(booking.id)}`);
+  };
+
+  // Open Zoho embedded signing iframe by requesting a server-side embed URL
+  const openZoho = async () => {
+    setZohoError(null);
+    setZohoLoading(true);
+    try {
+      const res = await fetch(`/api/contract/zoho-create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          booking_id: booking.id,
+          prefill: {
+            id_number: idNumber,
+            emergency_contact_name: emergencyName,
+            emergency_contact_phone: emergencyPhone,
+            ackTerms,
+            ackDamage,
+            ackLegal,
+            ackFuel,
+            ackReturn,
+            ackClean,
+          },
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "Failed to create Zoho request");
+      setEmbedUrl(json.embed_url);
+    } catch (err) {
+      console.error("Zoho open error:", err);
+      setZohoError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setZohoLoading(false);
+    }
   };
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -448,6 +519,7 @@ export function ContractClient({
                 label="Your Photo (Selfie)"
                 hint="A clear, recent photo of your face"
                 file={profilePhoto}
+                existingUrl={existingProfile}
                 accept="image/*"
                 onSelect={setProfilePhoto}
                 previewUrl={previewUrl}
@@ -458,6 +530,7 @@ export function ContractClient({
                 label="ID / Licence / Passport — Front"
                 hint="Front side of your identification document"
                 file={docFront}
+                existingUrl={existingFront}
                 accept="image/*"
                 onSelect={setDocFront}
                 previewUrl={previewUrl}
@@ -468,6 +541,7 @@ export function ContractClient({
                 label="ID / Licence / Passport — Back"
                 hint="Back side of your identification document"
                 file={docBack}
+                existingUrl={existingBack}
                 accept="image/*"
                 onSelect={setDocBack}
                 previewUrl={previewUrl}
@@ -591,35 +665,49 @@ export function ContractClient({
               7. Digital Signature
             </h2>
             <p className="mb-4 text-sm text-slate-600">
-              By typing your full name below you confirm that you have read, understood, and agreed
-              to all terms of this Car Rental Agreement. This acts as your electronic signature.
+              Please draw your signature below. This image will be saved and used to prefill the
+              contract template when opening the embedded signing session.
             </p>
 
             <div className="mb-1">
-              <label className="text-sm font-medium text-slate-700">
-                Type your full name to sign <span className="text-red-500">*</span>
-              </label>
-              <input
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 text-lg"
-                placeholder="Your full name"
-                value={signature}
-                onChange={(e) => setSignature(e.target.value)}
-              />
+              <p className="text-sm text-slate-700">Click the button below to open the contract in an embedded Zoho session. You will draw and confirm your signature inside Zoho's secure iframe.</p>
             </div>
 
-            {/* Live signature preview — mimics a handwritten signature block */}
-            {signature.trim() && (
-              <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
-                <p className="text-xs text-slate-400 mb-1">Signature Preview</p>
-                <p className="font-bold text-2xl text-ink italic">{signature}</p>
-                <p className="mt-2 text-xs text-slate-400">
-                  Signed on{" "}
-                  {new Date().toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => void openZoho()}
+                disabled={zohoLoading}
+                className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {zohoLoading ? "Preparing contract…" : "Open Contract Agreement (Sign on this site)"}
+              </button>
+              {zohoError && (
+                <p className="mt-2 text-xs text-red-600">Error preparing contract: {zohoError}</p>
+              )}
+            </div>
+
+            {/* Embedded iframe modal */}
+            {embedUrl && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div className="mx-4 max-w-4xl w-full rounded-xl bg-white p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold">Sign Agreement</h3>
+                    <button
+                      onClick={() => setEmbedUrl(null)}
+                      className="text-xs text-slate-500 hover:text-slate-700"
+                    >
+                      Close
+                    </button>
+                  </div>
+                  <div className="h-[80vh]">
+                    <iframe
+                      src={embedUrl}
+                      title="Zoho Sign"
+                      className="h-full w-full rounded-md border"
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </section>
@@ -671,6 +759,7 @@ function DocUploadSlot({
   label,
   hint,
   file,
+  existingUrl,
   accept,
   onSelect,
   previewUrl,
@@ -678,13 +767,14 @@ function DocUploadSlot({
   label: string;
   hint: string;
   file: File | null;
+  existingUrl?: string | null;
   accept: string;
   onSelect: (f: File) => void;
   previewUrl: (f: File | null) => string | null;
 }) {
   // Hidden file input is triggered programmatically by the visible button
   const inputRef = useRef<HTMLInputElement>(null);
-  const preview = previewUrl(file);
+  const preview = previewUrl(file) || existingUrl;
 
   return (
     <div className="flex flex-col gap-2">
@@ -750,3 +840,6 @@ function DocUploadSlot({
     </div>
   );
 }
+
+// ─── SignaturePad sub-component ─────────────────────────────────────────────
+// Signature capture is now handled inside the Zoho embedded iframe.
