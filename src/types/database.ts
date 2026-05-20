@@ -56,7 +56,13 @@ export type Booking = {
   special_requests: string | null;
   total_amount: number;
   status: string;
+  booking_status?: string | null;
+  zoho_request_id?: string | null;
+  zoho_action_id?: string | null;
+  zoho_status?: string | null;
+  payment_status?: string | null;
   paystack_reference: string | null;
+  payment_link?: string | null;
   id_number?: string | null;
   emergency_contact_name?: string | null;
   emergency_contact_phone?: string | null;
@@ -64,6 +70,8 @@ export type Booking = {
   profile_photo_url?: string | null;
   id_front_url?: string | null;
   id_back_url?: string | null;
+  signed_at?: string | null;
+  paid_at?: string | null;
   created_at: string;
 };
 

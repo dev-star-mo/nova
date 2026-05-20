@@ -450,8 +450,8 @@ export function MyBookingsClient({
                     {c ? `${c.make} ${c.model}` : "Vehicle"}
                   </p>
                   <p className="text-sm text-slate-500">
-                    {new Date(b.pickup_at).toLocaleString()} →{" "}
-                    {new Date(b.return_at).toLocaleString()}
+                    {new Date(b.pickup_at).toLocaleString('en-US')} →{" "}
+                    {new Date(b.return_at).toLocaleString('en-US')}
                   </p>
                   {b.pickup_location && (
                     <p className="text-xs text-slate-400 mt-0.5">

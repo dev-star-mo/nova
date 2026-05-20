@@ -43,8 +43,10 @@ export async function POST(req: Request) {
     const { error: updateError } = await supabaseAdmin
       .from("bookings")
       .update({
-        status: "paid",
+        status: "confirmed",
+        payment_status: "paid",
         paystack_reference: reference, // Ensure it's updated if not already
+        paid_at: new Date().toISOString(),
       })
       .eq("id", booking_id);
 

@@ -190,23 +190,7 @@ export function ContractClient({
 
       if (updateError) throw updateError;
 
-      // All data saved — proceed to the existing Paystack checkout page
-      router.push(`/checkout?booking=${encodeURIComponent(booking.id)}`);
-    } catch (err) {
-      console.error("Submission error:", err);
-      // If any upload or update fails, surface the error and abort navigation
-      setValidationMsg(
-        err instanceof Error ? err.message : "Submission failed. Please try again."
-      );
-      setUploading(false);
-    }
-  };
-
-  // Open Zoho embedded signing iframe by requesting a server-side embed URL
-  const openZoho = async () => {
-    setZohoError(null);
-    setZohoLoading(true);
-    try {
+      // All data saved — create Zoho request which will email the agreement
       const res = await fetch(`/api/contract/zoho-create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -225,16 +209,23 @@ export function ContractClient({
           },
         }),
       });
+
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Failed to create Zoho request");
-      setEmbedUrl(json.embed_url);
+
+      // Redirect to the user-facing confirmation/sent page
+      router.push(`/contract/sent?booking=${encodeURIComponent(booking.id)}`);
     } catch (err) {
-      console.error("Zoho open error:", err);
-      setZohoError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setZohoLoading(false);
+      console.error("Submission error:", err);
+      // If any upload or update fails, surface the error and abort navigation
+      setValidationMsg(
+        err instanceof Error ? err.message : "Submission failed. Please try again."
+      );
+      setUploading(false);
     }
   };
+
+  // Note: signing is handled by email — server will create and send the Zoho request.
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -659,57 +650,22 @@ export function ContractClient({
             </div>
           </section>
 
-          {/* ── Section 7: Digital Signature ── */}
+          {/* ── Section 7: Agreement Signing ── */}
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-4 text-lg font-bold text-ink border-b border-slate-100 pb-2">
-              7. Digital Signature
+              7. Agreement Signing
             </h2>
             <p className="mb-4 text-sm text-slate-600">
-              Please draw your signature below. This image will be saved and used to prefill the
-              contract template when opening the embedded signing session.
+              After you submit this form, we will automatically generate your vehicle rental agreement and send it to your email address (<strong>{booking.email}</strong>).
             </p>
 
             <div className="mb-1">
-              <p className="text-sm text-slate-700">Click the button below to open the contract in an embedded Zoho session. You will draw and confirm your signature inside Zoho's secure iframe.</p>
+              <p className="text-sm text-slate-700">Please open your email inbox and click the link to securely review and sign your contract.</p>
             </div>
 
             <div className="mt-4">
-              <button
-                type="button"
-                onClick={() => void openZoho()}
-                disabled={zohoLoading}
-                className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {zohoLoading ? "Preparing contract…" : "Open Contract Agreement (Sign on this site)"}
-              </button>
-              {zohoError && (
-                <p className="mt-2 text-xs text-red-600">Error preparing contract: {zohoError}</p>
-              )}
+              <p className="text-sm text-slate-700">Once your signature is recorded, you will receive a follow-up email containing your secure payment link and booking confirmation details.</p>
             </div>
-
-            {/* Embedded iframe modal */}
-            {embedUrl && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-                <div className="mx-4 max-w-4xl w-full rounded-xl bg-white p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold">Sign Agreement</h3>
-                    <button
-                      onClick={() => setEmbedUrl(null)}
-                      className="text-xs text-slate-500 hover:text-slate-700"
-                    >
-                      Close
-                    </button>
-                  </div>
-                  <div className="h-[80vh]">
-                    <iframe
-                      src={embedUrl}
-                      title="Zoho Sign"
-                      className="h-full w-full rounded-md border"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
           </section>
 
           {/* ── Validation / error message ── */}
@@ -733,8 +689,8 @@ export function ContractClient({
           {/* Helper text explaining why the button may still be disabled */}
           {!canProceed && (
             <p className="text-center text-xs text-slate-400">
-              Complete all required fields, upload all 3 documents, tick every acknowledgement
-              box, and sign to enable payment.
+              Complete all required fields, upload all 3 documents, and tick every acknowledgement
+              box to proceed.
             </p>
           )}
 
