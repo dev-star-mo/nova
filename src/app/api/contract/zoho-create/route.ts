@@ -88,7 +88,7 @@ export async function POST(req: Request) {
 
     console.log("Zoho create body:", JSON.stringify(createBody, null, 2));
 
-    const accessHeader = 'Zoho-oauthtoken 1000.6a0ed438c4e15cbebc035396caf940f0.17db95a2325538c9737f5a7b709cce79';
+    const accessHeader = `Zoho-oauthtoken ${accessToken}`;
     const createRes = await fetch(`https://sign.zoho.com/api/v1/templates/${encodeURIComponent(templateId)}/createdocument`, {
       method: "POST",
       headers: {
