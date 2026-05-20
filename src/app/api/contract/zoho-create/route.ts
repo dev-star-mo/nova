@@ -10,44 +10,56 @@ type JsonBody = {
 
 export async function POST(req: Request) {
   const templateId = process.env.ZOHO_TEMPLATE_ID;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
+  // Validate critical configuration
   if (!templateId) {
-    return NextResponse.json(
-      { error: "Zoho is not configured. Set ZOHO_TEMPLATE_ID." },
-      { status: 503 }
-    );
-  }
-
-  const body = (await req.json()) as JsonBody;
-  const bookingId = body.booking_id;
-  if (!bookingId) return NextResponse.json({ error: "booking_id required" }, { status: 400 });
-
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: booking, error } = await supabase
-    .from("bookings")
-    .select("id, full_name, email, user_id")
-    .eq("id", bookingId)
-    .single();
-
-  if (error || !booking || booking.user_id !== user.id) {
-    return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    console.error("Zoho error: ZOHO_TEMPLATE_ID is missing");
+    return NextResponse.json({ error: "Zoho is not configured. Set ZOHO_TEMPLATE_ID." }, { status: 503 });
   }
 
   try {
-    // Obtain a fresh Zoho access token via the shared helper
-    const accessToken = await generateZohoAccessToken();
-    console.log("Zoho access token:", accessToken);
+    const body = (await req.json()) as JsonBody;
+    const bookingId = body.booking_id;
+    if (!bookingId) return NextResponse.json({ error: "booking_id required" }, { status: 400 });
 
-    // Build the createBody exactly as Zoho's API requires for this template.
-    // action_id and role are fixed values from the template configuration.
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user?.email) {
+      console.error("Supabase auth error:", authError);
+      return NextResponse.json({ error: "Unauthorized", detail: authError?.message }, { status: 401 });
+    }
+
+    const { data: booking, error: dbError } = await supabase
+      .from("bookings")
+      .select("id, full_name, email, user_id")
+      .eq("id", bookingId)
+      .single();
+
+    if (dbError || !booking) {
+      console.error("Database error fetching booking:", dbError);
+      return NextResponse.json({ error: "Booking not found", detail: dbError?.message }, { status: 404 });
+    }
+
+    if (booking.user_id !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // Obtain a fresh Zoho access token
+    let accessToken: string;
+    try {
+      accessToken = await generateZohoAccessToken();
+    } catch (tokenErr: any) {
+      console.error("Failed to generate Zoho token:", tokenErr);
+      return NextResponse.json({ 
+        error: "Zoho Authentication Failed", 
+        detail: tokenErr.message || "Unknown OAuth error" 
+      }, { status: 502 });
+    }
+
     const actionId = process.env.ZOHO_ACTION_ID ?? "584934000000047014";
-
     const prefill = body.prefill || {};
-    // Separate text values from boolean values so they map to the correct Zoho field_data keys
     const field_text_data: Record<string, string> = {};
     const field_boolean_data: Record<string, boolean> = {};
     for (const [k, v] of Object.entries(prefill)) {
@@ -58,8 +70,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Construct create request for Zoho Sign template.
-    // Do NOT request embedded signing — we want Zoho to email the customer directly.
     const createBody = {
       templates: {
         field_data: {
@@ -80,19 +90,15 @@ export async function POST(req: Request) {
             role: "Customer",
             verify_recipient: false,
             private_notes: "",
-            // omit is_embedded so Zoho will send an email to the recipient
           },
         ],
       },
     };
 
-    console.log("Zoho create body:", JSON.stringify(createBody, null, 2));
-
-    const accessHeader = `Zoho-oauthtoken ${accessToken}`;
     const createRes = await fetch(`https://sign.zoho.com/api/v1/templates/${encodeURIComponent(templateId)}/createdocument`, {
       method: "POST",
       headers: {
-        Authorization: accessHeader,
+        Authorization: `Zoho-oauthtoken ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(createBody),
@@ -105,31 +111,28 @@ export async function POST(req: Request) {
     } catch {
       createJson = { raw: createText };
     }
-    console.log("Zoho create response:", JSON.stringify(createJson, null, 2));
 
-    // The createdocument response nests data under "requests" at the top level
-    const requestId: string | undefined =
-      createJson?.requests?.request_id ||
-      createJson?.data?.request_id ||
-      createJson?.request_id;
-
-    if (!requestId) {
-      console.error("Zoho create failed — could not extract request_id", { status: createRes.status, body: createJson });
-      return NextResponse.json({ error: "Failed to create Zoho request", status: createRes.status, detail: createJson }, { status: 502 });
+    if (!createRes.ok || createJson.status === "failure") {
+      console.error("Zoho contract creation failure:", createJson);
+      return NextResponse.json({ 
+        error: "Zoho contract creation failed", 
+        status: createRes.status, 
+        detail: createJson 
+      }, { status: 502 });
     }
 
-    // Extract the action_id that Zoho assigned to the created document.
-    // This is distinct from the template action_id and is required for the embedtoken call.
-    const createdActionId: string | undefined =
-      createJson?.requests?.actions?.[0]?.action_id ||
-      createJson?.data?.actions?.[0]?.action_id;
+    const requestId = createJson?.requests?.request_id || createJson?.data?.request_id || createJson?.request_id;
+    const createdActionId = createJson?.requests?.actions?.[0]?.action_id || createJson?.data?.actions?.[0]?.action_id;
 
-    if (!createdActionId) {
-      console.error("Zoho create — could not extract action_id from response", createJson);
-      return NextResponse.json({ error: "Failed to extract action_id from created Zoho document", detail: createJson }, { status: 502 });
+    if (!requestId || !createdActionId) {
+      console.error("Zoho response missing identifiers:", createJson);
+      return NextResponse.json({ 
+        error: "Zoho response missing request_id or action_id", 
+        detail: createJson 
+      }, { status: 502 });
     }
 
-    // Save the Zoho request id, action id and request status to the booking
+    // Save identifiers to database
     const { error: updateError } = await supabase.from("bookings").update({
       zoho_request_id: requestId,
       zoho_action_id: createdActionId,
@@ -138,29 +141,24 @@ export async function POST(req: Request) {
     }).eq("id", booking.id);
 
     if (updateError) {
-      console.error("Zoho create: failed to update booking in database:", updateError);
-      // We don't necessarily want to fail the whole request if the document was created,
-      // but the webhook will certainly fail later if we don't fix this.
-      // Given the previous issue, we'll return an error to let the user know.
+      console.error("Database update error (booking status):", updateError);
       return NextResponse.json({
         error: "Failed to update booking status in database",
-        detail: updateError,
+        detail: updateError.message,
         zoho_request_id: requestId
       }, { status: 500 });
     }
 
-    console.log(`Zoho create: updated booking ${booking.id} with request_id ${requestId}`);
-
-    // Return minimal success information. The customer will receive an email
-    // directly from Zoho. Client should show the success confirmation page.
     return NextResponse.json({
       message: "Zoho request created; signing email sent",
       zoho_request_id: requestId,
       zoho_action_id: createdActionId,
-      request_status: createJson?.requests?.status || createJson?.data?.status || null,
     });
-  } catch (err) {
-    console.error("Zoho create error:", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  } catch (err: any) {
+    console.error("Zoho create unexpected error:", err);
+    return NextResponse.json({ 
+      error: "Internal server error", 
+      message: err.message || "An unexpected error occurred" 
+    }, { status: 500 });
   }
 }

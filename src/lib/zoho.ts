@@ -7,6 +7,24 @@ type ZohoTokenResponse = {
 };
 
 export async function generateZohoAccessToken(): Promise<string> {
+    const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
+    const clientId = process.env.ZOHO_CLIENT_ID;
+    const clientSecret = process.env.ZOHO_CLIENT_SECRET;
+
+    // Log presence and length of variables for diagnostics on Vercel
+    console.log("Zoho OAuth Config Check:", {
+        hasRefreshToken: !!refreshToken,
+        refreshTokenLength: refreshToken?.length ?? 0,
+        hasClientId: !!clientId,
+        clientIdLength: clientId?.length ?? 0,
+        hasClientSecret: !!clientSecret,
+        clientSecretLength: clientSecret?.length ?? 0,
+    });
+
+    if (!refreshToken || !clientId || !clientSecret) {
+        throw new Error("Missing Zoho configuration. Check ZOHO_REFRESH_TOKEN, ZOHO_CLIENT_ID, and ZOHO_CLIENT_SECRET.");
+    }
+
     try {
         const response = await fetch(
             "https://accounts.zoho.com/oauth/v2/token",
@@ -16,9 +34,9 @@ export async function generateZohoAccessToken(): Promise<string> {
                     "Content-Type": "application/x-www-form-urlencoded",
                 },
                 body: new URLSearchParams({
-                    refresh_token: process.env.ZOHO_REFRESH_TOKEN!,
-                    client_id: process.env.ZOHO_CLIENT_ID!,
-                    client_secret: process.env.ZOHO_CLIENT_SECRET!,
+                    refresh_token: refreshToken,
+                    client_id: clientId,
+                    client_secret: clientSecret,
                     grant_type: "refresh_token",
                 }),
             }
@@ -32,17 +50,17 @@ export async function generateZohoAccessToken(): Promise<string> {
         });
 
         if (!response.ok || data.error) {
-            console.error("Zoho token error:", data);
+            console.error("Zoho token error details:", data);
             const errorMsg = data.error === "invalid_scope"
                 ? "Invalid OAuth Scope. Ensure the refresh token was generated with 'ZohoSign.templates.ALL' and 'ZohoSign.documents.ALL' scopes."
-                : (data.error || "Failed to generate Zoho access token");
+                : (data.error || `Zoho OAuth failed with status ${response.status}`);
             throw new Error(errorMsg);
         }
 
         return data.access_token;
 
     } catch (error) {
-        console.error("Zoho OAuth Error:", error);
+        console.error("Zoho OAuth Exception:", error);
         throw error;
     }
 }
