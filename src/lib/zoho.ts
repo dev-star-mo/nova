@@ -25,10 +25,18 @@ export async function generateZohoAccessToken(): Promise<string> {
         );
 
         const data: ZohoTokenResponse = await response.json();
+        console.log("Zoho token response metadata:", {
+            api_domain: data.api_domain,
+            token_type: data.token_type,
+            expires_in: data.expires_in
+        });
 
         if (!response.ok || data.error) {
             console.error("Zoho token error:", data);
-            throw new Error(data.error || "Failed to generate Zoho access token");
+            const errorMsg = data.error === "invalid_scope"
+                ? "Invalid OAuth Scope. Ensure the refresh token was generated with 'ZohoSign.templates.ALL' and 'ZohoSign.documents.ALL' scopes."
+                : (data.error || "Failed to generate Zoho access token");
+            throw new Error(errorMsg);
         }
 
         return data.access_token;
