@@ -37,6 +37,7 @@ export async function generateZohoAccessToken(): Promise<string> {
                     refresh_token: refreshToken,
                     client_id: clientId,
                     client_secret: clientSecret,
+                    redirect_uri: "https://sign.zoho.com",
                     grant_type: "refresh_token",
                 }),
             }
