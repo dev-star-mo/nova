@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user?.email) {
       console.error("Supabase auth error:", authError);
       return NextResponse.json({ error: "Unauthorized", detail: authError?.message }, { status: 401 });
@@ -52,9 +52,9 @@ export async function POST(req: Request) {
       accessToken = await generateZohoAccessToken();
     } catch (tokenErr: any) {
       console.error("Failed to generate Zoho token:", tokenErr);
-      return NextResponse.json({ 
-        error: "Zoho Authentication Failed", 
-        detail: tokenErr.message || "Unknown OAuth error" 
+      return NextResponse.json({
+        error: "Zoho Authentication Failed",
+        detail: tokenErr.message || "Unknown OAuth error"
       }, { status: 502 });
     }
 
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     const createRes = await fetch(`https://sign.zoho.com/api/v1/templates/${encodeURIComponent(templateId)}/createdocument`, {
       method: "POST",
       headers: {
-        Authorization: `Zoho-oauthtoken ${accessToken}`,
+        Authorization: 'Zoho-oauthtoken 1000.30102b0f75d73fc387c0ecc5850cf722.8cc7047775d48226c6e182f2323ae785',
         "Content-Type": "application/json",
       },
       body: JSON.stringify(createBody),
@@ -114,10 +114,10 @@ export async function POST(req: Request) {
 
     if (!createRes.ok || createJson.status === "failure") {
       console.error("Zoho contract creation failure:", createJson);
-      return NextResponse.json({ 
-        error: "Zoho contract creation failed", 
-        status: createRes.status, 
-        detail: createJson 
+      return NextResponse.json({
+        error: "Zoho contract creation failed",
+        status: createRes.status,
+        detail: createJson
       }, { status: 502 });
     }
 
@@ -126,9 +126,9 @@ export async function POST(req: Request) {
 
     if (!requestId || !createdActionId) {
       console.error("Zoho response missing identifiers:", createJson);
-      return NextResponse.json({ 
-        error: "Zoho response missing request_id or action_id", 
-        detail: createJson 
+      return NextResponse.json({
+        error: "Zoho response missing request_id or action_id",
+        detail: createJson
       }, { status: 502 });
     }
 
@@ -156,9 +156,9 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     console.error("Zoho create unexpected error:", err);
-    return NextResponse.json({ 
-      error: "Internal server error", 
-      message: err.message || "An unexpected error occurred" 
+    return NextResponse.json({
+      error: "Internal server error",
+      message: err.message || "An unexpected error occurred"
     }, { status: 500 });
   }
 }
