@@ -5,6 +5,42 @@ import { createClient } from "@/lib/supabase/client";
 import { useAppUI } from "@/components/providers/app-ui-provider";
 import { useUserSession } from "@/components/providers/user-session-provider";
 
+/** Password field with show/hide toggle */
+function PasswordInput({
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  autoComplete?: string;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        type={show ? "text" : "password"}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 pr-10 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+      />
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label={show ? "Hide password" : "Show password"}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+        onClick={() => setShow((s) => !s)}
+      >
+        {show ? <EyeOff /> : <Eye />}
+      </button>
+    </div>
+  );
+}
+
 export function AuthModal() {
   const { authOpen, authView, closeAuth, setAuthView } = useAppUI();
   const [email, setEmail] = useState("");
@@ -18,7 +54,12 @@ export function AuthModal() {
   const supabase = createClient();
 
   useEffect(() => {
-    if (user && user.email_confirmed_at) {
+    if (!user) return;
+    // Close the modal for fully authenticated users:
+    // - Google/OAuth users always have email_confirmed_at set
+    // - Email users who have confirmed their email
+    // - Email users where confirmation is disabled (email_confirmed_at may also be set)
+    if (user.email_confirmed_at || user.app_metadata?.provider === "google") {
       closeAuth();
     }
   }, [user, closeAuth]);
@@ -92,14 +133,14 @@ export function AuthModal() {
       setBusy(false);
       return;
     }
-    const { error: e } = await supabase.auth.signUp({
+    const { data: signUpData, error: e } = await supabase.auth.signUp({
       email: email.trim(),
       options: { emailRedirectTo: `${origin}/auth/callback?type=signup` },
       password,
     });
     setBusy(false);
     if (e) {
-      // Supabase returns this message when the email is already registered
+      // Supabase returns this message when the email is already registered (confirm mode ON)
       if (
         e.message.toLowerCase().includes("already registered") ||
         e.message.toLowerCase().includes("already exists") ||
@@ -108,10 +149,21 @@ export function AuthModal() {
         setError(
           "An account with this email already exists. Please sign in instead."
         );
-        // Offer a quick switch to sign in
         return;
       }
       setError(e.message);
+      return;
+    }
+    // When email confirmations are DISABLED, Supabase returns a fake success
+    // with an empty identities array when the email is already registered.
+    if (
+      signUpData.user &&
+      Array.isArray(signUpData.user.identities) &&
+      signUpData.user.identities.length === 0
+    ) {
+      setError(
+        "An account with this email already exists. Please sign in instead."
+      );
       return;
     }
     setEmail("");
@@ -265,13 +317,11 @@ export function AuthModal() {
               onChange={(e) => setEmail(e.target.value)}
             />
             <label className="mt-3 block text-sm font-medium text-slate-700">Password</label>
-            <input
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-              type="password"
+            <PasswordInput
+              value={password}
+              onChange={setPassword}
               autoComplete="current-password"
               placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
             />
             <button
               type="button"
@@ -360,22 +410,18 @@ export function AuthModal() {
               onChange={(e) => setEmail(e.target.value)}
             />
             <label className="mt-3 block text-sm font-medium text-slate-700">Password</label>
-            <input
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-              type="password"
-              autoComplete="new-password"
-              placeholder="Enter your password"
+            <PasswordInput
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
+              autoComplete="new-password"
+              placeholder="At least 6 characters"
             />
             <label className="mt-3 block text-sm font-medium text-slate-700">Confirm password</label>
-            <input
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
-              type="password"
-              autoComplete="new-password"
-              placeholder="Confirm your password"
+            <PasswordInput
               value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              onChange={setConfirm}
+              autoComplete="new-password"
+              placeholder="Repeat your password"
             />
             <button
               type="button"
@@ -435,6 +481,24 @@ export function AuthModal() {
         )}
       </div>
     </div>
+  );
+}
+
+function Eye() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOff() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
   );
 }
 
