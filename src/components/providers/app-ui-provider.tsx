@@ -10,7 +10,7 @@ import {
 } from "react";
 import type { Car } from "@/types/database";
 
-type AuthView = "gate" | "signin" | "signup" | "reset";
+type AuthView = "gate" | "signin" | "signup" | "reset" | "unverified";
 
 type AppUIContextValue = {
   authOpen: boolean;

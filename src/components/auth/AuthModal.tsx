@@ -18,7 +18,7 @@ export function AuthModal() {
   const supabase = createClient();
 
   useEffect(() => {
-    if (user) {
+    if (user && user.email_confirmed_at) {
       closeAuth();
     }
   }, [user, closeAuth]);
@@ -32,6 +32,13 @@ export function AuthModal() {
       setConfirm("");
     }
   }, [authOpen]);
+
+  // Populate email in unverified view from the current user
+  useEffect(() => {
+    if (authView === "unverified" && user?.email) {
+      setEmail(user.email);
+    }
+  }, [authView, user?.email]);
 
   if (!authOpen) return null;
 
@@ -63,7 +70,7 @@ export function AuthModal() {
     }
     if (data.user && !data.user.email_confirmed_at) {
       setInfo(
-        "A confirmation email was sent to your address. Please confirm your email before signing in."
+        "Please confirm your email before signing in. Check your inbox for the verification link."
       );
       await supabase.auth.signOut();
       return;
@@ -87,13 +94,23 @@ export function AuthModal() {
     }
     const { error: e } = await supabase.auth.signUp({
       email: email.trim(),
+      options: { emailRedirectTo: `${origin}/auth/callback?type=signup` },
       password,
-      options: {
-        emailRedirectTo: `${origin}/auth/callback`,
-      },
     });
     setBusy(false);
     if (e) {
+      // Supabase returns this message when the email is already registered
+      if (
+        e.message.toLowerCase().includes("already registered") ||
+        e.message.toLowerCase().includes("already exists") ||
+        e.message.toLowerCase().includes("user already")
+      ) {
+        setError(
+          "An account with this email already exists. Please sign in instead."
+        );
+        // Offer a quick switch to sign in
+        return;
+      }
       setError(e.message);
       return;
     }
@@ -102,7 +119,7 @@ export function AuthModal() {
     setConfirm("");
     setAuthView("signin");
     setInfo(
-      "Account created. Check your inbox to confirm your email before signing in. You can sign in once your email is verified."
+      "Account created! Check your inbox to confirm your email. You can sign in once your email is verified."
     );
   };
 
@@ -111,7 +128,7 @@ export function AuthModal() {
     setError(null);
     setInfo(null);
     const { error: e } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${origin}/auth/update-password`,
+      redirectTo: `${origin}/auth/callback?type=recovery`,
     });
     setBusy(false);
     if (e) {
@@ -119,6 +136,24 @@ export function AuthModal() {
       return;
     }
     setInfo("If an account exists for this email, a reset link has been sent.");
+  };
+
+  const resendVerification = async () => {
+    if (!email.trim()) return;
+    setBusy(true);
+    setError(null);
+    setInfo(null);
+    const { error: e } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim(),
+      options: { emailRedirectTo: `${origin}/auth/callback?type=signup` },
+    });
+    setBusy(false);
+    if (e) {
+      setError(e.message);
+      return;
+    }
+    setInfo("Verification email resent! Check your inbox.");
   };
 
   return (
@@ -164,6 +199,40 @@ export function AuthModal() {
           </>
         )}
 
+        {/* ── Unverified account gate ── */}
+        {authView === "unverified" && (
+          <>
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-xl">
+                📧
+              </span>
+              <h2 className="font-display text-xl font-bold text-ink">Verify your email</h2>
+            </div>
+            <p className="mt-3 text-sm text-slate-600">
+              Only verified accounts can book a car. A verification email has been sent to{" "}
+              <strong>{email || user?.email}</strong>. Please click the link in that email to
+              confirm your account, then come back to book.
+            </p>
+            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            {info && <p className="mt-2 text-sm text-green-700">{info}</p>}
+            <button
+              type="button"
+              className="mt-5 w-full rounded-xl bg-brand-600 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+              disabled={busy}
+              onClick={() => void resendVerification()}
+            >
+              {busy ? "Sending…" : "Resend verification email"}
+            </button>
+            <button
+              type="button"
+              className="mt-2 w-full rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              onClick={closeAuth}
+            >
+              Close
+            </button>
+          </>
+        )}
+
         {authView === "signin" && (
           <>
             <h2 className="font-display text-xl font-bold text-ink">Sign in</h2>
@@ -175,7 +244,8 @@ export function AuthModal() {
               onClick={() => void signInGoogle()}
               disabled={busy}
             >
-              <span className="text-lg">G</span> Sign in with Google
+              <GoogleIcon />
+              Sign in with Google
             </button>
             <div className="relative my-5">
               <div className="absolute inset-0 flex items-center">
@@ -241,8 +311,46 @@ export function AuthModal() {
         {authView === "signup" && (
           <>
             <h2 className="font-display text-xl font-bold text-ink">Create account</h2>
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-            <label className="mt-4 block text-sm font-medium text-slate-700">Email</label>
+            {error && (
+              <p className="mt-2 text-sm text-red-600">
+                {error}
+                {error.includes("already exists") && (
+                  <>
+                    {" "}
+                    <button
+                      type="button"
+                      className="font-semibold text-brand-600 hover:underline"
+                      onClick={() => {
+                        setError(null);
+                        setInfo(null);
+                        setAuthView("signin");
+                      }}
+                    >
+                      Sign in instead →
+                    </button>
+                  </>
+                )}
+              </p>
+            )}
+            {/* Google sign-up */}
+            <button
+              type="button"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 py-2.5 text-sm font-medium hover:bg-slate-50"
+              onClick={() => void signInGoogle()}
+              disabled={busy}
+            >
+              <GoogleIcon />
+              Sign up with Google
+            </button>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase text-slate-400">
+                <span className="bg-white px-2">Or sign up with email</span>
+              </div>
+            </div>
+            <label className="block text-sm font-medium text-slate-700">Email</label>
             <input
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
               type="email"
@@ -327,5 +435,29 @@ export function AuthModal() {
         )}
       </div>
     </div>
+  );
+}
+
+/** Simple coloured Google "G" icon */
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden>
+      <path
+        d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"
+        fill="#4285F4"
+      />
+      <path
+        d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z"
+        fill="#34A853"
+      />
+      <path
+        d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58Z"
+        fill="#EA4335"
+      />
+    </svg>
   );
 }

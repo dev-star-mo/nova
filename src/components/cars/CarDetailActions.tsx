@@ -13,6 +13,11 @@ export function CarDetailActions({ car }: { car: Car }) {
       openAuth("gate");
       return;
     }
+    // Block unverified users from proceeding to the booking modal
+    if (!user.email_confirmed_at) {
+      openAuth("unverified");
+      return;
+    }
     openBooking(car);
   };
 

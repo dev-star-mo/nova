@@ -102,6 +102,14 @@ export function BookingModal() {
     setSubmitted(true);
     setError(null);
     if (!user?.email) return;
+    // Belt-and-suspenders: block unverified users from submitting a booking
+    if (!user.email_confirmed_at) {
+      setError(
+        "Only verified accounts can make a booking. Please confirm your email first — check your inbox for the verification link."
+      );
+      setBusy(false);
+      return;
+    }
     if (
       !fullName.trim() ||
       !phone.trim() ||
