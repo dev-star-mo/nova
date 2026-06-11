@@ -1,0 +1,17 @@
+[build]
+  command   = "npm run build"
+  publish   = ".next"
+
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL"
+
+# Required for Next.js on Netlify
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# ---------------------------------------------------------------------------
+# Scheduled function — restores car units after a booking's return date passes
+# Runs daily at 03:00 UTC
+# ---------------------------------------------------------------------------
+[functions."cron-restore-units"]
+  schedule = "0 3 * * *"
