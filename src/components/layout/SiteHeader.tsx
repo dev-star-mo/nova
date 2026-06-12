@@ -75,7 +75,7 @@ export function SiteHeader() {
           <span className="font-display min-w-0 leading-tight">
             <span className="block text-sm font-bold text-ink sm:text-lg">NovaDrive</span>
             <span className="block text-xs font-medium text-slate-500 sm:text-sm">
-              CarLink Solutions
+              Logistics
             </span>
           </span>
         </Link>

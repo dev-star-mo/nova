@@ -15,11 +15,11 @@ export function AboutSection() {
             >
               <h2 className="text-onyx-900 leading-tight">
                 Crafting Extraordinary <br />
-                <span className="text-brand-600">Journeys Since 2024</span>
+                <span className="text-brand-600">Journeys Since 2020</span>
               </h2>
               <p className="mt-8 text-lg text-muted leading-relaxed">
-                NovaDrive offers a meticulously curated selection of vehicles, from high-performance 
-                sports cars to elegant executive sedans. We believe that a rental is more than 
+                NovaDrive offers a meticulously curated selection of vehicles, from high-performance
+                sports cars to reliable SUVs. We believe that a rental is more than
                 just a car — it&apos;s a statement of style and a commitment to quality.
               </p>
               <div className="mt-10 grid grid-cols-2 gap-8">
@@ -34,7 +34,7 @@ export function AboutSection() {
               </div>
             </motion.div>
           </div>
-          
+
           <div className="lg:w-1/2 relative">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -43,9 +43,9 @@ export function AboutSection() {
               className="relative aspect-video rounded-[2rem] overflow-hidden shadow-2xl"
             >
               <div className="absolute inset-0 bg-brand-600/10 mix-blend-multiply z-10" />
-              <img 
-                src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80" 
-                alt="Luxury Car Interior" 
+              <img
+                src="https://www.hertsrollers.com/rolls-royce-hire-fleet/executive-car-hire-fleet/"
+                alt="Luxury Car Interior"
                 className="w-full h-full object-cover"
               />
             </motion.div>

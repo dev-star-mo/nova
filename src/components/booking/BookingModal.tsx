@@ -197,23 +197,23 @@ export function BookingModal() {
               <Calendar className="h-8 w-8 text-white" />
             </div>
             <h2 className="text-2xl font-black uppercase tracking-[0.2em] text-brand-600 mb-2">Reservation</h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 opacity-80">Nova Executive Fleet</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 opacity-80">NovaDrive Fleet</p>
           </div>
 
           <div className="space-y-8 flex-1">
             {selectedCar ? (
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Selected Asset</p>
+                  <p className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Selected Vehicle</p>
                   <p className="text-lg font-bold text-white">{selectedCar.make} {selectedCar.model}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Rate Mode</p>
+                  <p className="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Service Type</p>
                   <p className="text-sm font-bold text-brand-600">{driving}</p>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-500 italic">Select a vehicle to view configuration summary.</p>
+              <p className="text-xs text-slate-500 italic">Select a vehicle to view details.</p>
             )}
 
             {durationLabel && (
@@ -229,7 +229,7 @@ export function BookingModal() {
 
           <div className="mt-auto pt-10 border-t border-white/5 relative z-10">
             <div className="flex items-center justify-between mb-3 text-slate-500">
-              <span className="text-[10px] font-black uppercase tracking-widest">Investment Summary</span>
+              <span className="text-[10px] font-black uppercase tracking-widest">Total Cost</span>
               <div className="h-1.5 w-1.5 rounded-full bg-brand-600 animate-pulse" />
             </div>
             <div className="text-4xl font-display font-black text-white tracking-tight">
@@ -261,8 +261,8 @@ export function BookingModal() {
           </div>
 
           <div className="max-w-xl">
-            <h3 className="text-2xl font-black text-onyx-950 uppercase tracking-widest mb-2">Deployment <span className="text-brand-600">Brief</span></h3>
-            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest opacity-60 mb-12">Client mandate for executive asset mobilization.</p>
+            <h3 className="text-2xl font-black text-onyx-950 uppercase tracking-widest mb-2">Car Rental <span className="text-brand-600">Application</span></h3>
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest opacity-60 mb-12">Fill in for your car reservation.</p>
 
             {error && (
               <div className="mb-8 p-4 rounded-2xl bg-red-50 border border-red-100 flex gap-3 text-red-600 animate-in fade-in slide-in-from-top-2">
@@ -313,7 +313,7 @@ export function BookingModal() {
                 <div className="space-y-6">
                   <div className="relative space-y-2">
                     <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-onyx-950">
-                      <CarIcon className="h-3 w-3 text-brand-600" /> Asset Selection
+                      <CarIcon className="h-3 w-3 text-brand-600" /> Vehicle Selection
                     </label>
                     <div className="relative group">
                       <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-brand-600 transition-colors" />
@@ -378,7 +378,7 @@ export function BookingModal() {
                     <div className="space-y-1">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Policy Note</p>
                       <p className="text-[10px] font-medium text-slate-500 leading-relaxed uppercase tracking-wider italic">
-                        Chauffeured mode includes a certified executive pilot.
+                        Chauffeured mode includes a certified executive driver.
                       </p>
                     </div>
                   </div>
