@@ -44,7 +44,7 @@ export function AboutSection() {
             >
               <div className="absolute inset-0 bg-brand-600/10 mix-blend-multiply z-10" />
               <img
-                src="https://www.hertsrollers.com/rolls-royce-hire-fleet/executive-car-hire-fleet/"
+                src="https://www.cfaomobility.co.za/fleet-solutions/"
                 alt="Luxury Car Interior"
                 className="w-full h-full object-cover"
               />
