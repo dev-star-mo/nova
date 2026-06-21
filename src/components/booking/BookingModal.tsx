@@ -235,7 +235,7 @@ export function BookingModal() {
             <div className="text-4xl font-display font-black text-white tracking-tight">
               {total > 0 ? (
                 <span className="flex items-baseline gap-2">
-                  <span className="text-xs text-brand-600 font-bold">KSh</span>
+                  <span className="text-xs text-brand-600 font-bold">$</span>
                   {total.toLocaleString('en-US')}
                 </span>
               ) : "—"}

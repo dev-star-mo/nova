@@ -206,7 +206,7 @@ export function FleetTab({ initialCars, onAddCar }: Props) {
                         <input type="number" className={editInp} value={editForm.year ?? ""} onChange={(e) => setField("year", Number(e.target.value))} />
                       </div>
                       <div className="space-y-1">
-                        <label className={labelStyle}>Daily Rate (KSh)</label>
+                        <label className={labelStyle}>Daily Rate (USD $)</label>
                         <input type="number" className={editInp} value={editForm.price_per_day ?? ""} onChange={(e) => setField("price_per_day", Number(e.target.value))} />
                       </div>
                       <div className="space-y-1 col-span-2">
@@ -222,16 +222,60 @@ export function FleetTab({ initialCars, onAddCar }: Props) {
                         </select>
                       </div>
                       <div className="space-y-1">
+                        <label className={labelStyle}>Fuel Type</label>
+                        <select className={`${editInp} appearance-none cursor-pointer`} value={editForm.fuel_type ?? "Petrol"} onChange={(e) => setField("fuel_type", e.target.value)}>
+                          <option>Petrol</option>
+                          <option>Diesel</option>
+                          <option>Electric</option>
+                          <option>Hybrid</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
                         <label className={labelStyle}>Available Units</label>
                         <input type="number" min={0} className={editInp} value={editForm.units_available ?? 0} onChange={(e) => setField("units_available", Number(e.target.value))} />
                       </div>
-                      <div className="flex items-end pb-2">
+
+                      <div className="space-y-1 col-span-2">
+                        <label className={labelStyle}>Description</label>
+                        <textarea rows={3} className={`${editInp} resize-none`} value={editForm.description ?? ""} onChange={(e) => setField("description", e.target.value)} />
+                      </div>
+                      <div className="flex items-center pb-2">
                         <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest cursor-pointer text-slate-500">
                           <input type="checkbox" className="h-4 w-4 rounded-md border-slate-200 text-brand-600 focus:ring-brand-600" checked={editForm.available ?? true} onChange={(e) => setField("available", e.target.checked)} />
                           Online
                         </label>
                       </div>
                     </div>
+
+                    {/* Image Gallery in Edit Mode */}
+                    {(car.images?.length ?? 0) > 0 && (
+                      <div className="mt-2">
+                        <p className={`${labelStyle} mb-2`}>Portfolio Images</p>
+                        <div className="grid grid-cols-4 gap-2">
+                          {(car.images ?? []).slice(0, 8).map((src) => (
+                            <div key={src} className="group/img relative aspect-square overflow-hidden rounded-xl bg-slate-50 ring-2 ring-transparent hover:ring-brand-600/20 transition-all">
+                              <Image src={src} alt="Portfolio" fill className="object-cover" unoptimized />
+                              <button
+                                type="button"
+                                onClick={() => void removeImage(car.id, src)}
+                                disabled={uploading === car.id}
+                                className="absolute inset-0 bg-red-600/90 text-white opacity-0 transition-opacity group-hover/img:opacity-100 flex items-center justify-center disabled:opacity-0"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => fileRefs.current[car.id]?.click()}
+                          disabled={uploading === car.id}
+                          className="mt-2 w-full rounded-xl border border-dashed border-slate-200 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:border-brand-600 hover:text-brand-600 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          <Upload className="h-3 w-3" /> Upload New Image
+                        </button>
+                      </div>
+                    )}
 
                     <div className="flex gap-3 pt-4 border-t border-slate-50">
                       <button onClick={() => void saveEdit(car.id)} disabled={saving} className="flex-1 rounded-2xl bg-brand-600 py-4 text-[10px] font-bold uppercase tracking-widest text-white shadow-xl hover:bg-brand-700 transition-all disabled:opacity-50">
@@ -264,7 +308,7 @@ export function FleetTab({ initialCars, onAddCar }: Props) {
 
                     <div className="flex items-baseline gap-1 mb-6">
                       <span className="text-xs font-medium text-slate-400 uppercase tracking-widest">Pricing</span>
-                      <span className="text-xl font-bold text-onyx-950 px-2">KSh {Number(car.price_per_day).toLocaleString()}</span>
+                      <span className="text-xl font-bold text-onyx-950 px-2">$ {Number(car.price_per_day).toLocaleString()}</span>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">/ 24H</span>
                     </div>
 

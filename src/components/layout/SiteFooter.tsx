@@ -3,7 +3,7 @@ import Image from "next/image";
 
 const PHONE = "+254 798 615 674" + " , " + "+254 733 555 638";
 const EMAIL = "novadrivecarlink@gmail.com";
-const LOCATION = "Nairobi Westlands, Mogotio Road 16, suit 004";
+const LOCATION = "Westlands, Mogotio Road 16, Suit 004";
 const MAPS_URL = "https://maps.app.goo.gl/3LmSSwmJiaqtEPkM6";
 
 export function SiteFooter() {

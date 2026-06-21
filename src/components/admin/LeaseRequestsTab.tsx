@@ -217,7 +217,7 @@ export function LeaseRequestsTab({ initialRequests }: Props) {
                       <div className="grid grid-cols-2 gap-3">
                         <input
                           className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-[10px] font-bold placeholder:text-slate-600 focus:ring-2 focus:ring-brand-600 focus:outline-none transition-all"
-                          placeholder="DAILY RATE (KSH)"
+                          placeholder="DAILY RATE (USD $)"
                           value={priceById[req.id] ?? ""}
                           onChange={(e) => setPriceById((prev) => ({ ...prev, [req.id]: e.target.value }))}
                         />

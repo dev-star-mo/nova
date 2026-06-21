@@ -18,7 +18,7 @@ export function MessagesTab({ bookings }: Props) {
 
   const defaultMessage = booking
     ? channel === "whatsapp"
-      ? `Hello ${booking.full_name},\n\nThank you for booking with NovaDrive! Your booking is confirmed.\n\nDetails:\n- Pickup: ${new Date(booking.pickup_at).toLocaleString('en-US')}\n- Return: ${new Date(booking.return_at).toLocaleString('en-US')}\n- Amount: KSh ${Number(booking.total_amount).toLocaleString('en-US')}\n\nPlease don't hesitate to reach out if you need anything.\n\nBest regards,\nNovaDrive Team`
+      ? `Hello ${booking.full_name},\n\nThank you for booking with NovaDrive! Your booking is confirmed.\n\nDetails:\n- Pickup: ${new Date(booking.pickup_at).toLocaleString('en-US')}\n- Return: ${new Date(booking.return_at).toLocaleString('en-US')}\n- Amount: $ ${Number(booking.total_amount).toLocaleString('en-US')}\n\nPlease don't hesitate to reach out if you need anything.\n\nBest regards,\nNovaDrive Team`
       : `Hello ${booking.full_name},\n\nWe appreciate you choosing NovaDrive. Your booking ${booking.paystack_reference ? `(Ref: ${booking.paystack_reference})` : ""} has been received and is currently ${booking.status}.\n\nPlease feel free to reach out if you have any questions.\n\nWarm regards,\nNovaDrive Team`
     : "";
 
@@ -231,7 +231,7 @@ export function MessagesTab({ bookings }: Props) {
                         <p className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Status & Liquidity</p>
                         <div className="flex items-baseline justify-between mt-1">
                           <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">{booking.status}</span>
-                          <span className="text-xs font-bold text-brand-600">KSh {Number(booking.total_amount).toLocaleString('en-US')}</span>
+                          <span className="text-xs font-bold text-brand-600">$ {Number(booking.total_amount).toLocaleString('en-US')}</span>
                         </div>
                       </div>
                     </div>

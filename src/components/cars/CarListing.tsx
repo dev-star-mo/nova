@@ -186,7 +186,7 @@ export function CarListing({
             </select>
           </div>
           <div className="relative">
-            <span className="absolute left-3.5 top-3.5 text-sm font-bold text-brand-600">KSh</span>
+            <span className="absolute left-3.5 top-3.5 text-sm font-bold text-brand-600">$</span>
             <input
               type="number"
               className="w-full rounded-2xl bg-onyx-900 border border-onyx-800 px-12 py-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-600 transition-all"
@@ -278,7 +278,7 @@ export function CarListing({
                             </h3>
                           </div>
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-onyx-950">Ksh. {Number(car.price_per_day).toLocaleString()}</div>
+                            <div className="text-2xl font-bold text-onyx-950">$ {Number(car.price_per_day).toLocaleString()}</div>
                             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Per Day</div>
                           </div>
                         </div>

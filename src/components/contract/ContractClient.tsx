@@ -417,7 +417,7 @@ export function ContractClient({
               <div className="relative z-10">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-1">Total Amount</span>
                 <span className="text-3xl font-black text-white">
-                  KSh. {Number(booking.total_amount).toLocaleString("en-US")}
+                  $ {Number(booking.total_amount).toLocaleString("en-US")}
                 </span>
               </div>
               <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center relative z-10 backdrop-blur-sm">

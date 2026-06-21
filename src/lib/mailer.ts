@@ -63,7 +63,7 @@ export function paymentRequestHtml({ fullName, bookingRef, amount, paymentLink, 
   <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#0f172a;line-height:1.4">
     <h2 style="color:#0f172a">Thank you for signing your agreement, ${fullName}.</h2>
     <p>Your booking reference: <strong>${bookingRef}</strong></p>
-    <p>Amount due: <strong>KSh ${amount.toLocaleString()}</strong></p>
+    <p>Amount due: <strong>$ ${amount.toLocaleString()}</strong></p>
     <p>Please complete payment securely using the link below:</p>
     <p><a href="${paymentLink}" style="display:inline-block;background:#10b981;color:white;padding:12px 18px;border-radius:8px;text-decoration:none">Pay Now</a></p>
     ${deadline ? `<p>Payment due by: ${deadline}</p>` : ""}
@@ -77,7 +77,7 @@ export function confirmationHtml({ fullName, bookingRef, amount }: { fullName: s
   return `
   <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#0f172a;line-height:1.4">
     <h2>Booking confirmed — Thank you, ${fullName}!</h2>
-    <p>Your booking <strong>${bookingRef}</strong> is now confirmed. Amount paid: <strong>KSh ${amount.toLocaleString()}</strong>.</p>
+    <p>Your booking <strong>${bookingRef}</strong> is now confirmed. Amount paid: <strong>$ ${amount.toLocaleString()}</strong>.</p>
     <p>We look forward to serving you. Contact support for any questions.</p>
   </div>
   `;

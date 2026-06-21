@@ -44,18 +44,18 @@ export default async function CarDetailPage({ params }: { params: Promise<{ id: 
           <dl className="mt-8 space-y-2 rounded-xl bg-slate-50 p-4 text-sm">
             <div className="flex justify-between">
               <dt>Per day</dt>
-              <dd className="font-semibold">Ksh. {Number(c.price_per_day).toLocaleString()}</dd>
+              <dd className="font-semibold">$ {Number(c.price_per_day).toLocaleString()}</dd>
             </div>
             {c.price_per_week != null && (
               <div className="flex justify-between">
                 <dt>Per week</dt>
-                <dd className="font-semibold">Ksh. {Number(c.price_per_week).toLocaleString()}</dd>
+                <dd className="font-semibold">$ {Number(c.price_per_week).toLocaleString()}</dd>
               </div>
             )}
             {c.price_per_month != null && (
               <div className="flex justify-between">
                 <dt>Per month</dt>
-                <dd className="font-semibold">Ksh. {Number(c.price_per_month).toLocaleString()}</dd>
+                <dd className="font-semibold">$ {Number(c.price_per_month).toLocaleString()}</dd>
               </div>
             )}
             <div className="flex justify-between text-slate-600">

@@ -63,13 +63,13 @@ export function AddCarModal({ onClose, onAdded }: Props) { //what does this do..
           <Field label="Year">
             <input type="number" className={inp} value={form.year} onChange={(e) => set("year", e.target.value)} />
           </Field>
-          <Field label="Price/day (KSh) *">
+          <Field label="Price/day (USD $) *">
             <input type="number" className={inp} value={form.price_per_day} onChange={(e) => set("price_per_day", e.target.value)} />
           </Field>
-          <Field label="Price/week (KSh)">
+          <Field label="Price/week (USD $)">
             <input type="number" className={inp} value={form.price_per_week} onChange={(e) => set("price_per_week", e.target.value)} />
           </Field>
-          <Field label="Price/month (KSh)">
+          <Field label="Price/month (USD $)">
             <input type="number" className={inp} value={form.price_per_month} onChange={(e) => set("price_per_month", e.target.value)} />
           </Field>
           <Field label="Category *" className="col-span-2">

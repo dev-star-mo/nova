@@ -142,7 +142,7 @@ export default async function BookingDetailPage({
               Total Investment
             </div>
             <div className="text-4xl font-bold text-white">
-              KSh. {Number(booking.total_amount).toLocaleString()}
+              $ {Number(booking.total_amount).toLocaleString()}
             </div>
           </div>
           <CreditCard className="h-10 w-10 text-slate-600" />

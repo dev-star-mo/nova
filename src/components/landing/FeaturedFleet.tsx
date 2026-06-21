@@ -27,7 +27,7 @@ export function FeaturedFleet() {
   }, [supabase]);
 
   const n = cars.length;
-  
+
   const paginate = useCallback((newDirection: number) => {
     setDirection(newDirection);
     setIdx((prevIdx) => (prevIdx + newDirection + n) % n);
@@ -96,7 +96,7 @@ export function FeaturedFleet() {
     <section id="fleet" className="py-24 bg-slate-50/50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center text-center">
-          <motion.span 
+          <motion.span
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -104,7 +104,7 @@ export function FeaturedFleet() {
           >
             Our Collection
           </motion.span>
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
@@ -112,13 +112,13 @@ export function FeaturedFleet() {
           >
             Featured Vehicles
           </motion.h2>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mx-auto mt-4 max-w-2xl text-muted"
           >
-            Experience pure luxury and performance with our hand-selected featured fleet.
+            Experience pure convenience and performance with our hand-selected featured fleet.
           </motion.p>
         </div>
 
@@ -150,21 +150,21 @@ export function FeaturedFleet() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent lg:bg-gradient-to-r" />
                   </div>
-                  
+
                   <div className="flex flex-col justify-center p-8 lg:w-2/5 lg:p-12">
                     <div className="flex items-center gap-2">
-                       <span className="rounded-full bg-brand-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-700">
+                      <span className="rounded-full bg-brand-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-700">
                         {car.transmission}
                       </span>
                       <span className="rounded-full bg-onyx-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-onyx-700">
                         {car.fuel_type}
                       </span>
                     </div>
-                    
+
                     <h3 className="mt-4 text-3xl font-bold text-onyx-900 lg:text-4xl">
                       {car.make} {car.model}
                     </h3>
-                    
+
                     <div className="mt-8 grid grid-cols-3 gap-6">
                       <div className="flex flex-col items-center gap-1">
                         <Users className="h-5 w-5 text-brand-600" />
@@ -179,12 +179,12 @@ export function FeaturedFleet() {
                         <span className="text-xs font-medium text-muted">{car.fuel_type}</span>
                       </div>
                     </div>
-                    
+
                     <div className="mt-10 flex items-center justify-between border-t border-slate-100 pt-8">
                       <div>
                         <p className="text-xs font-medium text-muted uppercase tracking-wider">Per Day</p>
                         <p className="text-2xl font-bold text-onyx-900">
-                          KSh <span className="text-brand-600">{Number(car.price_per_day).toLocaleString()}</span>
+                          $ <span className="text-brand-600">{Number(car.price_per_day).toLocaleString()}</span>
                         </p>
                       </div>
                       <div className="flex gap-2">
@@ -209,7 +209,7 @@ export function FeaturedFleet() {
               </motion.div>
             </AnimatePresence>
           </div>
-          
+
           <button
             type="button"
             onClick={prev}
@@ -256,14 +256,14 @@ export function FeaturedFleet() {
 
       <AnimatePresence>
         {detail && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
           >
             <div className="absolute inset-0" onClick={() => setDetail(null)} />
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -276,10 +276,10 @@ export function FeaturedFleet() {
               >
                 <ChevronRight className="h-6 w-6 rotate-45" />
               </button>
-              
+
               <div className="grid md:grid-cols-2">
                 <div className="relative aspect-square md:aspect-auto">
-                   <Image
+                  <Image
                     src={detail.image_url || detail.images?.[0] || img}
                     alt=""
                     fill
@@ -294,7 +294,7 @@ export function FeaturedFleet() {
                   <p className="mt-4 text-muted leading-relaxed">
                     {detail.description || "Indulge in the perfect blend of luxury, comfort, and performance. This vehicle is maintained to the highest standards, ensuring a seamless driving experience for your journey."}
                   </p>
-                  
+
                   <div className="mt-8 space-y-4">
                     <h4 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-onyx-900">
                       <Zap className="h-4 w-4 text-brand-600" />
@@ -314,10 +314,10 @@ export function FeaturedFleet() {
 
                   <div className="mt-auto pt-10">
                     <div className="flex items-end justify-between border-t border-slate-100 pt-6">
-                       <div>
+                      <div>
                         <p className="text-xs font-medium text-muted uppercase tracking-wider">Starting at</p>
                         <p className="text-3xl font-bold text-onyx-900">
-                          KSh {Number(detail.price_per_day).toLocaleString()}
+                          $ {Number(detail.price_per_day).toLocaleString()}
                         </p>
                       </div>
                       <button

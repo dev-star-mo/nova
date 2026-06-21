@@ -378,7 +378,7 @@ function EditModal({
               <div className="absolute inset-0 bg-gradient-to-r from-brand-600/10 to-transparent" />
               <div className="relative z-10">
                 <span className="text-slate-400 font-black uppercase tracking-[0.2em] text-[9px] block mb-1">Estimated New Total</span>
-                <span className="text-3xl font-black text-white">KSh. {liveTotal.toLocaleString('en-US')}</span>
+                <span className="text-3xl font-black text-white">$ {liveTotal.toLocaleString('en-US')}</span>
               </div>
               <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center relative z-10 backdrop-blur-sm">
                 <CreditCard className="h-6 w-6 text-brand-600" />
@@ -534,7 +534,7 @@ export function MyBookingsClient({
                 <div className="flex flex-col items-start md:items-end justify-center md:min-w-[200px]">
                   <div className="mb-4 text-left md:text-right">
                     <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Total Investment</div>
-                    <div className="text-3xl font-bold text-onyx-950">KSh. {Number(b.total_amount).toLocaleString('en-US')}</div>
+                    <div className="text-3xl font-bold text-onyx-950">$ {Number(b.total_amount).toLocaleString('en-US')}</div>
                   </div>
                   <div className="flex items-center gap-3">
                     {hasReviewed && (

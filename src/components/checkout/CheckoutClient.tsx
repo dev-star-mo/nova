@@ -196,7 +196,7 @@ export function CheckoutClient({
               <div className="border-t border-slate-100 pt-3 flex justify-between text-lg font-bold">
                 <dt>Total</dt>
                 <dd className="text-brand-700">
-                  KSh. {Number(booking.total_amount).toLocaleString("en-US")}
+                  $ {Number(booking.total_amount).toLocaleString("en-US")}
                 </dd>
               </div>
             </dl>
@@ -315,7 +315,7 @@ export function CheckoutClient({
               <div className="rounded-xl bg-slate-50 px-4 py-3 flex items-center justify-between text-sm font-semibold">
                 <span className="text-slate-600">Updated total</span>
                 <span className="text-brand-700 text-base">
-                  KSh. {liveTotal.toLocaleString("en-US")}
+                   $ {liveTotal.toLocaleString("en-US")}
                 </span>
               </div>
             )}

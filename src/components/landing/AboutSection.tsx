@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { motion } from "framer-motion";
 
 export function AboutSection() {
@@ -44,7 +46,7 @@ export function AboutSection() {
             >
               <div className="absolute inset-0 bg-brand-600/10 mix-blend-multiply z-10" />
               <img
-                src="https://www.cfaomobility.co.za/fleet-solutions/"
+                src="/cars_front.webp"
                 alt="Luxury Car Interior"
                 className="w-full h-full object-cover"
               />

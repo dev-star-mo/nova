@@ -97,7 +97,7 @@ export default function AdminDashboardClient({ bookings, cars: initialCars, leas
           />
           <StatCard
             label="Revenue"
-            value={`KSh ${revenue.toLocaleString('en-US')}`}
+            value={`$ ${revenue.toLocaleString('en-US')}`}
             icon={Wallet}
             variant="gold"
           />

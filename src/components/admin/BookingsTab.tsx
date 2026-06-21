@@ -103,7 +103,7 @@ export function BookingsTab({ bookings }: Props) {
                         </div>
                       </td>
                       <td className="px-8 py-6 text-right">
-                        <div className="font-bold text-onyx-950">KSh {Number(b.total_amount).toLocaleString('en-US')}</div>
+                        <div className="font-bold text-onyx-950">$ {Number(b.total_amount).toLocaleString('en-US')}</div>
                       </td>
                       <td className="px-8 py-6">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${config.bg} ${config.text} border border-current/10 shadow-sm`}>
@@ -198,7 +198,7 @@ export function BookingsTab({ bookings }: Props) {
                     <div className="rounded-2xl bg-white/5 p-4 border border-white/5">
                       <CreditCard className="h-4 w-4 text-brand-600 mb-2" />
                       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Total Investment</p>
-                      <p className="text-xs font-bold mt-1">KSh {Number(selected.total_amount).toLocaleString('en-US')}</p>
+                      <p className="text-xs font-bold mt-1">$ {Number(selected.total_amount).toLocaleString('en-US')}</p>
                     </div>
                   </div>
                 </div>
