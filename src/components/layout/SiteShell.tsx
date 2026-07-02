@@ -8,6 +8,7 @@ import { UserSessionProvider } from "@/components/providers/user-session-provide
 import { AppUIProvider } from "@/components/providers/app-ui-provider";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { BookingModal } from "@/components/booking/BookingModal";
+import { WhatsAppFAB } from "@/components/layout/WhatsAppFAB";
 import type { ReactNode } from "react";
 
 export function SiteShell({ children }: { children: ReactNode }) {
@@ -35,6 +36,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
         <SiteFooter />
         <AuthModal />
         <BookingModal />
+        <WhatsAppFAB />
       </AppUIProvider>
     </UserSessionProvider>
   );

@@ -4,6 +4,11 @@ import { cookies } from "next/headers";
 
 type CookieRow = { name: string; value: string; options?: CookieOptions };
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  process.env.NEXT_PUBLIC_VERCEL_URL ??
+  "https://novadriverentacar.com";
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
@@ -38,12 +43,17 @@ export async function GET(request: Request) {
       }
       // Email confirmation link → home page with verified banner
       if (type === "signup") {
-        return NextResponse.redirect(`${origin}/?verified=1`);
+        return NextResponse.redirect(`${SITE_URL}/?verified=1`);
       }
-      // OAuth or generic redirect
-      return NextResponse.redirect(`${origin}${next}`);
+      // OAuth (Google, etc.) or generic redirect — strip the code param by
+      // redirecting to the clean site URL (no ?code= in the final URL).
+      const destination = next === "/" ? SITE_URL : `${SITE_URL}${next}`;
+      return NextResponse.redirect(destination);
     }
   }
 
-  return NextResponse.redirect(`${origin}/?auth=error`);
+  // Link expired / invalid → redirect to clean home URL so the browser never
+  // shows the ugly ?auth=error#error=... query string. The VerifiedBanner
+  // component will display an inline error message instead.
+  return NextResponse.redirect(`${SITE_URL}/?link_expired=1`);
 }
