@@ -1,9 +1,10 @@
 "use client";
 
+const phoneNumber = "254142990630";
 const MESSAGE =
   "Hello NovaDrive! I'd like to inquire about renting a car. Could you please share availability and pricing?";
 
-const HREF = `https://wa.me/254733555638?text=${encodeURIComponent(MESSAGE)}`;
+const HREF = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(MESSAGE)}`;
 
 export function WhatsAppFAB() {
   return (

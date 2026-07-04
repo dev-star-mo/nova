@@ -1,11 +1,13 @@
 import { Phone, Mail, MapPin } from "lucide-react";
 
+const phoneNumber = "254142990630";
+
 const CONTACTS = [
   {
     icon: Phone,
     label: "Phone",
-    value: "+254 733 555 638",
-    href: "tel:+254733555638",
+    value: "+254 142990630",
+    href: `tel:${phoneNumber}`,
   },
   {
     icon: Mail,
@@ -71,7 +73,7 @@ export function ContactSection() {
 
           {/* WhatsApp Card */}
           <a
-            href={`https://wa.me/254733555638?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`}
+            href={`https://wa.me/${phoneNumber}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="group relative rounded-[2rem] bg-onyx-900 border border-white/5 p-8 hover:border-[#25D366]/40 hover:bg-onyx-800 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#25D366]/10 flex flex-col items-center text-center gap-4 overflow-hidden"

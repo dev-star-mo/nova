@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 
-const PHONE = "+254 798 615 674" + " , " + "+254 733 555 638";
+const PHONE = "+254 798 615 674";
 const EMAIL = "novadrivecarlink@gmail.com";
 const LOCATION = "Westlands, Mogotio Road 16, Suit 004";
 const MAPS_URL = "https://maps.app.goo.gl/3LmSSwmJiaqtEPkM6";
