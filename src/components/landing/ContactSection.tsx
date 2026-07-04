@@ -6,7 +6,7 @@ const CONTACTS = [
   {
     icon: Phone,
     label: "Phone",
-    value: "+254 142990630",
+    value: "+254142990630",
     href: `tel:${phoneNumber}`,
   },
   {
@@ -92,7 +92,7 @@ export function ContactSection() {
             </div>
             <div className="relative z-10">
               <dt className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2">WhatsApp</dt>
-              <dd className="text-sm font-bold text-white leading-relaxed group-hover:text-[#25D366] transition-colors duration-300">+254 733 555 638</dd>
+              <dd className="text-sm font-bold text-white leading-relaxed group-hover:text-[#25D366] transition-colors duration-300">+254 142 990 630</dd>
             </div>
           </a>
         </div>
