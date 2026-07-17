@@ -57,9 +57,6 @@ export type Booking = {
   total_amount: number;
   status: string;
   booking_status?: string | null;
-  zoho_request_id?: string | null;
-  zoho_action_id?: string | null;
-  zoho_status?: string | null;
   payment_status?: string | null;
   paystack_reference: string | null;
   payment_link?: string | null;

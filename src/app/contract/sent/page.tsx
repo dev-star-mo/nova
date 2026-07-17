@@ -1,6 +1,5 @@
 import React from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import SentClient from "@/components/contract/SentClient";
 
 export default async function SentPage({ searchParams }: { searchParams: Promise<{ booking?: string }> }) {
   const resolvedSearchParams = await searchParams;
@@ -9,7 +8,7 @@ export default async function SentPage({ searchParams }: { searchParams: Promise
 
   let booking: any = null;
   if (bookingId) {
-    const { data } = await admin.from("bookings").select("id,full_name,email,zoho_request_id").eq("id", bookingId).single();
+    const { data } = await admin.from("bookings").select("id,full_name,email").eq("id", bookingId).single();
     booking = data;
   }
 
@@ -41,34 +40,33 @@ export default async function SentPage({ searchParams }: { searchParams: Promise
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold">1</span>
                   <div>
                     <p className="font-medium text-ink">Open your email</p>
-                    <p className="text-sm text-slate-500 mt-1">Check your inbox for an email from Zoho Sign.</p>
+                    <p className="text-sm text-slate-500 mt-1">Check your inbox for an email from BoldSign.</p>
                   </div>
                 </li>
                 <li className="flex gap-4">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold">2</span>
                   <div>
                     <p className="font-medium text-ink">Review and sign</p>
-                    <p className="text-sm text-slate-500 mt-1">Follow the link in the email to digitally sign your car rental agreement.</p>
+                    <p className="text-sm text-slate-500 mt-1">Follow the BoldSign link to sign your rental agreement.</p>
                   </div>
                 </li>
                 <li className="flex gap-4">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold">3</span>
                   <div>
                     <p className="font-medium text-ink">Receive payment link</p>
-                    <p className="text-sm text-slate-500 mt-1">After signing, you will automatically receive a secure Paystack payment link via email.</p>
+                    <p className="text-sm text-slate-500 mt-1">After signing, you will receive a secure Paystack payment link via email.</p>
                   </div>
                 </li>
                 <li className="flex gap-4">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold">4</span>
                   <div>
                     <p className="font-medium text-ink">Booking Confirmed</p>
-                    <p className="text-sm text-slate-500 mt-1">Your booking is confirmed immediately after payment is completed.</p>
+                    <p className="text-sm text-slate-500 mt-1">Your booking is confirmed once payment completes.</p>
                   </div>
                 </li>
               </ul>
             </div>
 
-            <SentClient bookingId={booking.id} email={booking.email} />
             <a href={`mailto:${process.env.SUPPORT_EMAIL ?? "support@company.com"}`} className="mt-6 block text-center text-sm font-medium text-brand-600 hover:underline">Contact support</a>
           </div>
         )}

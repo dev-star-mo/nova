@@ -1,21 +1,8 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  X,
-  MapPin,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  FileText,
-  User,
-  Phone,
-  CreditCard,
-  ChevronLeft
-} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { Car } from "@/types/database";
 
@@ -40,7 +27,7 @@ type BookingRow = {
   id_number?: string | null;
   emergency_contact_name?: string | null;
   emergency_contact_phone?: string | null;
-  signature_name?: string | null;
+  //signature_name?: string | null;
   profile_photo_url?: string | null;
   id_front_url?: string | null;
   id_back_url?: string | null;
@@ -83,21 +70,21 @@ export function ContractClient({
   const [emergencyName, setEmergencyName] = useState(booking.emergency_contact_name || "");
   const [emergencyPhone, setEmergencyPhone] = useState(booking.emergency_contact_phone || "");
 
-  // No local signature capture: signing will happen inside Zoho embedded iframe
-  // Zoho embedded signing URL (if user chooses to sign via Zoho)
+  // Digital signature — renter types their full name to sign
+  //const [signature, setSignature] = useState(booking.signature_name || "");
+  // BoldSign embedded signing URL — set when the user clicks "Open Contract Agreement"
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
-  const [zohoLoading, setZohoLoading] = useState(false);
-  const [zohoError, setZohoError] = useState<string | null>(null);
+  // Loading flag shown on the button while the server generates the sign link
+  const [boldSignLoading, setBoldSignLoading] = useState(false);
+  // Error message displayed below the button if the API call fails
+  const [boldSignError, setBoldSignError] = useState<string | null>(null);
+  // Set to true once BoldSign fires the onDocumentSigned postMessage — gates the Pay button
+  const [contractSigned, setContractSigned] = useState(false);
 
   // ── Acknowledgement checkboxes ────────────────────────────────────────────
   // All must be ticked before the "Proceed to Payment" button becomes active
 
   const [ackTerms, setAckTerms] = useState(false);   // T&C acceptance
-  const [ackDamage, setAckDamage] = useState(false); // Damage liability
-  const [ackLegal, setAckLegal] = useState(false);   // Legal use only
-  const [ackFuel, setAckFuel] = useState(false);     // Fuel policy
-  const [ackReturn, setAckReturn] = useState(false); // On-time return
-  const [ackClean, setAckClean] = useState(false);   // Clean vehicle return
 
   // ── Document upload state ─────────────────────────────────────────────────
   // Each slot holds the File the user selected; null means not yet chosen
@@ -127,18 +114,27 @@ export function ContractClient({
   const docCount = [hasProfile, hasFront, hasBack].filter(Boolean).length;
   const allDocsSelected = docCount === 3;
 
-  // All six acknowledgement boxes must be ticked
+  //  Acknowledgement boxes must be ticked
   const allAcknowledged =
-    ackTerms && ackDamage && ackLegal && ackFuel && ackReturn && ackClean;
+    ackTerms;
 
-  // "Proceed to Payment" is gated on: required text fields + all docs + all checkboxes + signature
+  // Required text fields filled (used to gate "Open Contract Agreement" button)
+  const requiredFieldsFilled =
+    idNumber.trim() !== "" &&
+    emergencyName.trim() !== "" &&
+    emergencyPhone.trim() !== "";
+
+  // "Open Contract Agreement" is gated on: required fields + all acknowledgements ticked
+  const canOpenContract = requiredFieldsFilled && allAcknowledged;
+
+  // "Proceed to Payment" is gated on: required text fields + all docs + ack checkbox + contract signed
   const canProceed =
     idNumber.trim() !== "" &&
     emergencyName.trim() !== "" &&
     emergencyPhone.trim() !== "" &&
     allDocsSelected &&
-    allDocsSelected &&
-    allAcknowledged;
+    allAcknowledged &&
+    contractSigned;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -165,8 +161,6 @@ export function ContractClient({
     return data.publicUrl;
   }
 
-  // (no local signature upload — signing is handled by Zoho embedded session)
-
   // ── Submit handler ────────────────────────────────────────────────────────
 
   // Validates the form, concurrently uploads all 3 documents, then redirects to checkout
@@ -174,7 +168,7 @@ export function ContractClient({
     if (!canProceed) {
       setValidationMsg(
         "Please complete all required fields, upload all 3 documents, " +
-        "and tick every acknowledgement box before proceeding."
+        "and tick the acknowledgement box before proceeding."
       );
       return;
     }
@@ -195,6 +189,7 @@ export function ContractClient({
           id_number: idNumber,
           emergency_contact_name: emergencyName,
           emergency_contact_phone: emergencyPhone,
+          //signature_name: signature,
           profile_photo_url: pUrl,
           id_front_url: fUrl,
           id_back_url: bUrl,
@@ -203,31 +198,8 @@ export function ContractClient({
 
       if (updateError) throw updateError;
 
-      // All data saved — create Zoho request which will email the agreement
-      const res = await fetch(`/api/contract/zoho-create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          booking_id: booking.id,
-          prefill: {
-            id_number: idNumber,
-            emergency_contact_name: emergencyName,
-            emergency_contact_phone: emergencyPhone,
-            ackTerms,
-            ackDamage,
-            ackLegal,
-            ackFuel,
-            ackReturn,
-            ackClean,
-          },
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || "Failed to create Zoho request");
-
-      // Redirect to the user-facing confirmation/sent page
-      router.push(`/contract/sent?booking=${encodeURIComponent(booking.id)}`);
+      // All data saved — proceed to the existing Paystack checkout page
+      router.push(`/checkout?booking=${encodeURIComponent(booking.id)}`);
     } catch (err) {
       console.error("Submission error:", err);
       // If any upload or update fails, surface the error and abort navigation
@@ -238,205 +210,257 @@ export function ContractClient({
     }
   };
 
-  // Note: signing is handled by email — server will create and send the Zoho request.
+  // ── BoldSign embedded signing ────────────────────────────────────────────
+  //
+  // Calls our server-side API route (/api/contract/boldsign-create) which:
+  //   1. Creates a document from the BoldSign template
+  //   2. Returns a short-lived embedded signing URL
+  // We then render that URL inside a full-screen modal <iframe>.
+  //
+  // We also attach a window "message" listener so BoldSign's iframe can tell us
+  // when the document has been signed (onDocumentSigned postMessage event).
+
+  // Stable handler reference so we can remove the listener when the component unmounts
+  const handleBoldSignMessage = useCallback((event: MessageEvent) => {
+    // Only trust messages from the BoldSign app origin
+    if (event.origin !== "https://app-eu.boldsign.com") return;
+    if (event.data?.action === "onDocumentSigned") {
+      setContractSigned(true);
+      setEmbedUrl(null); // close the modal automatically
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("message", handleBoldSignMessage);
+    return () => window.removeEventListener("message", handleBoldSignMessage);
+  }, [handleBoldSignMessage]);
+
+  const openBoldSign = async () => {
+    setBoldSignError(null);
+    setBoldSignLoading(true);
+    try {
+      // Hit the server route — the API key never leaves the server
+      const res = await fetch("/api/contract/boldsign-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ booking_id: booking.id }),
+      });
+      const json = await res.json();
+      // Throw so the catch block can surface the error message to the user
+      if (!res.ok) throw new Error(json?.error ?? "Failed to create BoldSign document");
+      // embed_url is the short-lived BoldSign signing URL for the iframe
+      setEmbedUrl(json.embed_url);
+    } catch (err) {
+      console.error("BoldSign open error:", err);
+      setBoldSignError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBoldSignLoading(false);
+    }
+  };
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-onyx-50 py-16 px-4">
-      <div className="mx-auto max-w-4xl">
+    <div className="min-h-screen bg-slate-50 py-10 px-4">
+      <div className="mx-auto max-w-3xl">
 
         {/* ── Page header ── */}
-        <div className="mb-12 text-center">
-          <div className="flex justify-center mb-6">
-            <div className="h-16 w-16 rounded-[2rem] bg-onyx-950 flex items-center justify-center shadow-2xl shadow-onyx-950/20 border border-white/10 group overflow-hidden relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-brand-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <FileText className="h-8 w-8 text-brand-600 relative z-10" />
-            </div>
-          </div>
-          <h1 className="font-display text-4xl font-black text-onyx-950 tracking-tight uppercase">
-            Rental <span className="text-brand-600">Agreement</span>
-          </h1>
-          <p className="mt-4 text-sm text-slate-500 font-medium max-w-lg mx-auto leading-relaxed">
-            Please read the agreement carefully and fill it in to proceed with your reservation.
+        <div className="mb-8 text-center">
+          <h1 className="font-display text-3xl font-bold text-ink">Car Rental Agreement</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Please read the agreement carefully, complete all required fields, and sign before
+            proceeding to payment.
           </p>
         </div>
 
-        <div className="space-y-10">
+        <div className="space-y-6">
 
           {/* ── Section 1: Vehicle Details ── */}
-          <section className="rounded-[2.5rem] bg-white p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-100 transition-all hover:shadow-[0_48px_80px_-24px_rgba(0,0,0,0.12)]">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="h-1.5 w-6 bg-brand-600 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-onyx-950">
-                01. Asset Allocation
-              </h2>
-            </div>
-            <dl className="grid sm:grid-cols-2 gap-x-12 gap-y-6 text-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-bold text-ink border-b border-slate-100 pb-2">
+              1. Vehicle Details
+            </h2>
+            <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
               {/* Make, model and year */}
-              <div className="space-y-1">
-                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Vehicle Model</dt>
-                <dd className="text-base font-bold text-onyx-950">{carLabel}</dd>
+              <div>
+                <dt className="text-slate-500">Vehicle</dt>
+                <dd className="font-medium text-ink">{carLabel}</dd>
               </div>
               {/* Category (e.g. SUV, Luxury) */}
               {car?.category && (
-                <div className="space-y-1">
-                  <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tier Category</dt>
-                  <dd className="text-base font-bold text-onyx-950 capitalize">
+                <div>
+                  <dt className="text-slate-500">Category</dt>
+                  <dd className="font-medium text-ink capitalize">
                     {car.category.replace(/_/g, " ")}
                   </dd>
                 </div>
               )}
               {/* Gearbox type */}
               {car?.transmission && (
-                <div className="space-y-1">
-                  <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Transmission</dt>
-                  <dd className="text-base font-bold text-onyx-950">{car.transmission}</dd>
+                <div>
+                  <dt className="text-slate-500">Transmission</dt>
+                  <dd className="font-medium text-ink">{car.transmission}</dd>
                 </div>
               )}
               {/* Number of seats */}
               {car?.seats && (
-                <div className="space-y-1">
-                  <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Seat Capacity</dt>
-                  <dd className="text-base font-bold text-onyx-950">{car.seats} Seats</dd>
+                <div>
+                  <dt className="text-slate-500">Seats</dt>
+                  <dd className="font-medium text-ink">{car.seats}</dd>
+                </div>
+              )}
+              {/* Petrol / Diesel / Electric */}
+              {car?.fuel_type && (
+                <div>
+                  <dt className="text-slate-500">Fuel Type</dt>
+                  <dd className="font-medium text-ink">{car.fuel_type}</dd>
+                </div>
+              )}
+              {/* Base collection location */}
+              {car?.location && (
+                <div>
+                  <dt className="text-slate-500">Location</dt>
+                  <dd className="font-medium text-ink">{car.location}</dd>
                 </div>
               )}
             </dl>
           </section>
 
           {/* ── Section 2: Renter Details ── */}
-          <section className="rounded-[2.5rem] bg-white p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-100 transition-all">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="h-1.5 w-6 bg-brand-600 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-onyx-950">
-                02. Client Profile
-              </h2>
-            </div>
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-bold text-ink border-b border-slate-100 pb-2">
+              2. Renter Details
+            </h2>
 
             {/* Read-only fields pulled from the booking record */}
-            <dl className="grid sm:grid-cols-2 gap-x-12 gap-y-6 text-sm mb-10">
-              <div className="space-y-1">
-                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Full Name</dt>
-                <dd className="text-base font-bold text-onyx-950">{booking.full_name}</dd>
+            <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm mb-5">
+              <div>
+                <dt className="text-slate-500">Full Name</dt>
+                <dd className="font-medium text-ink">{booking.full_name}</dd>
               </div>
-              <div className="space-y-1">
-                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Phone Number</dt>
-                <dd className="text-base font-bold text-onyx-950">{booking.phone}</dd>
+              <div>
+                <dt className="text-slate-500">Phone</dt>
+                <dd className="font-medium text-ink">{booking.phone}</dd>
               </div>
-              <div className="sm:col-span-2 space-y-1 outline-none">
-                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registered Email</dt>
-                <dd className="text-base font-bold text-onyx-950">{booking.email}</dd>
+              <div className="col-span-2">
+                <dt className="text-slate-500">Email</dt>
+                <dd className="font-medium text-ink">{booking.email}</dd>
               </div>
             </dl>
 
-            <div className="grid gap-8">
-              {/* National ID / Passport number — required for identification */}
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-onyx-950 flex items-center gap-2">
-                  <FileText className="h-3 w-3 text-brand-600" /> National ID / Passport Number
+            {/* National ID / Passport number — required for identification */}
+            <div className="mb-4">
+              <label className="text-sm font-medium text-slate-700">
+                National ID / Passport Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                placeholder="e.g. 12345678 or A12345678"
+                value={idNumber}
+                onChange={(e) => setIdNumber(e.target.value)}
+              />
+            </div>
+
+            {/* Emergency contact — required for all rentals */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-slate-700">
+                  Emergency Contact Name <span className="text-red-500">*</span>
                 </label>
                 <input
-                  className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-600 focus:bg-white transition-all shadow-sm"
-                  placeholder="e.g. 12345678 or A12345678"
-                  value={idNumber}
-                  onChange={(e) => setIdNumber(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                  placeholder="e.g. Jane Doe"
+                  value={emergencyName}
+                  onChange={(e) => setEmergencyName(e.target.value)}
                 />
               </div>
-
-              {/* Emergency contact — required for all rentals */}
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-onyx-950 flex items-center gap-2">
-                    <User className="h-3 w-3 text-brand-600" /> Emergency Contact Name <span className="text-brand-600 text-[8px] animate-pulse">*</span>
-                  </label>
-                  <input
-                    className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-600 focus:bg-white transition-all shadow-sm"
-                    placeholder="e.g. Jane Doe"
-                    value={emergencyName}
-                    onChange={(e) => setEmergencyName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-onyx-950 flex items-center gap-2">
-                    <Phone className="h-3 w-3 text-brand-600" /> Emergency Phone <span className="text-brand-600 text-[8px] animate-pulse">*</span>
-                  </label>
-                  <input
-                    className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-600 focus:bg-white transition-all shadow-sm"
-                    placeholder="e.g. +254 700 000 000"
-                    value={emergencyPhone}
-                    onChange={(e) => setEmergencyPhone(e.target.value)}
-                  />
-                </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700">
+                  Emergency Contact Phone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                  placeholder="e.g. +254 700 000 000"
+                  value={emergencyPhone}
+                  onChange={(e) => setEmergencyPhone(e.target.value)}
+                />
               </div>
             </div>
           </section>
 
           {/* ── Section 3: Rental Details ── */}
-          <section className="rounded-[2.5rem] bg-white p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-100 transition-all">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="h-1.5 w-6 bg-brand-600 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-onyx-950">
-                03. Scheduling
-              </h2>
-            </div>
-
-            <dl className="grid sm:grid-cols-2 gap-x-12 gap-y-8 text-sm">
-              <div className="space-y-1">
-                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pickup</dt>
-                <dd className="text-base font-bold text-onyx-950">{formatDate(booking.pickup_at)}</dd>
-                {booking.pickup_location && (
-                  <p className="text-[10px] font-bold text-brand-600 uppercase tracking-wider mt-1">{booking.pickup_location}</p>
-                )}
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-bold text-ink border-b border-slate-100 pb-2">
+              3. Rental Details
+            </h2>
+            <dl className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+              {/* Pickup date and time */}
+              <div>
+                <dt className="text-slate-500">Pickup Date &amp; Time</dt>
+                <dd className="font-medium text-ink">{formatDate(booking.pickup_at)}</dd>
               </div>
-              <div className="space-y-1">
-                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Return</dt>
-                <dd className="text-base font-bold text-onyx-950">{formatDate(booking.return_at)}</dd>
-                {booking.dropoff_location && (
-                  <p className="text-[10px] font-bold text-brand-600 uppercase tracking-wider mt-1">{booking.dropoff_location}</p>
-                )}
+              {/* Return date and time */}
+              <div>
+                <dt className="text-slate-500">Return Date &amp; Time</dt>
+                <dd className="font-medium text-ink">{formatDate(booking.return_at)}</dd>
               </div>
-              <div className="space-y-1">
-                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Rental Duration</dt>
-                <dd className="text-base font-bold text-onyx-950">{booking.rental_duration}</dd>
+              {/* Duration computed at booking time */}
+              <div>
+                <dt className="text-slate-500">Duration</dt>
+                <dd className="font-medium text-ink">{booking.rental_duration}</dd>
               </div>
-              <div className="space-y-1">
-                <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Service Mode</dt>
-                <dd className="text-base font-bold text-onyx-950">{booking.driving_mode}</dd>
+              {/* Self-driven or Chauffeured */}
+              <div>
+                <dt className="text-slate-500">Driving Mode</dt>
+                <dd className="font-medium text-ink">{booking.driving_mode}</dd>
               </div>
+              {/* Where the car will be collected */}
+              {booking.pickup_location && (
+                <div>
+                  <dt className="text-slate-500">Pickup Location</dt>
+                  <dd className="font-medium text-ink">{booking.pickup_location}</dd>
+                </div>
+              )}
+              {/* Where the car should be returned */}
+              {booking.dropoff_location && (
+                <div>
+                  <dt className="text-slate-500">Drop-off Location</dt>
+                  <dd className="font-medium text-ink">{booking.dropoff_location}</dd>
+                </div>
+              )}
+              {/* Intended travel destination */}
               {booking.destination && (
-                <div className="sm:col-span-2 space-y-1">
-                  <dt className="text-[10px] font-black uppercase tracking-widest text-slate-400">Destination</dt>
-                  <dd className="text-base font-bold text-onyx-950">{booking.destination}</dd>
+                <div>
+                  <dt className="text-slate-500">Destination</dt>
+                  <dd className="font-medium text-ink">{booking.destination}</dd>
+                </div>
+              )}
+              {/* Any special requests noted at booking */}
+              {booking.special_requests && (
+                <div className="col-span-2">
+                  <dt className="text-slate-500">Special Requests</dt>
+                  <dd className="font-medium text-ink">{booking.special_requests}</dd>
                 </div>
               )}
             </dl>
 
             {/* Prominently displayed total amount */}
-            <div className="mt-12 flex items-center justify-between rounded-3xl bg-onyx-950 px-8 py-6 shadow-2xl shadow-onyx-950/20 group relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-brand-600/10 to-transparent" />
-              <div className="relative z-10">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-1">Total Amount</span>
-                <span className="text-3xl font-black text-white">
-                  $ {Number(booking.total_amount).toLocaleString("en-US")}
-                </span>
-              </div>
-              <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center relative z-10 backdrop-blur-sm">
-                <CreditCard className="h-6 w-6 text-brand-600" />
-              </div>
+            <div className="mt-5 flex items-center justify-between rounded-xl bg-brand-50 px-4 py-3">
+              <span className="text-sm font-semibold text-slate-700">Total Amount</span>
+              <span className="text-lg font-bold text-brand-700">
+                KSh. {Number(booking.total_amount).toLocaleString("en-US")}
+              </span>
             </div>
           </section>
 
           {/* ── Section 4: Terms & Conditions ── */}
-          <section className="rounded-[2.5rem] bg-white p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-100 transition-all">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="h-1.5 w-6 bg-brand-600 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-onyx-950">
-                04. Contract Agreement
-              </h2>
-            </div>
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-bold text-ink border-b border-slate-100 pb-2">
+              4. Terms &amp; Conditions
+            </h2>
 
             {/* Scrollable T&C block — customer must scroll to read before ticking checkboxes */}
-            <div className="h-64 overflow-y-auto rounded-3xl border border-slate-100 bg-slate-50/50 p-6 text-[11px] leading-relaxed text-slate-500 space-y-4 scrollbar-thin scrollbar-thumb-brand-200">
+            <div className="h-56 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 space-y-3">
               <p>
                 <strong>1. Eligibility.</strong> The renter must be at least 23 years of age and
                 hold a valid driving licence applicable to the vehicle category. For self-drive
@@ -500,15 +524,13 @@ export function ContractClient({
           </section>
 
           {/* ── Section 5: Document Uploads ── */}
-          <section className="rounded-[2.5rem] bg-white p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-100 transition-all">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-1.5 w-6 bg-brand-600 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-onyx-950">
-                05. Verification
-              </h2>
-            </div>
-            <p className="mb-8 text-sm text-slate-500 font-medium">
-              Upload clear high-fidelity captures of your credentials. Verified documentation is mandatory for booking.
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-1 text-lg font-bold text-ink border-b border-slate-100 pb-2">
+              5. Document Uploads
+            </h2>
+            <p className="mb-5 mt-3 text-sm text-slate-500">
+              Upload clear images of the following documents. All 3 are required before you can
+              proceed to payment.
             </p>
 
             {/* 2-column grid of upload slots */}
@@ -550,34 +572,29 @@ export function ContractClient({
             </div>
 
             {/* Progress bar showing how many of the 3 slots have been filled */}
-            <div className="mt-8 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-widest text-onyx-950">Verification Status</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-600">{docCount} / 3 Completed</span>
-              </div>
-              <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+            <div className="mt-5 flex items-center gap-3">
+              <div className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-brand-600 transition-all duration-700 shadow-[0_0_12px_rgba(197,160,89,0.3)]"
+                  className="h-full rounded-full bg-brand-500 transition-all"
                   style={{ width: `${(docCount / 3) * 100}%` }}
                 />
               </div>
+              <span className="text-xs text-slate-500">{docCount} / 3 uploaded</span>
             </div>
           </section>
 
           {/* ── Section 6: Acknowledgements ── */}
-          <section className="rounded-[2.5rem] bg-white p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-100 transition-all">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-1.5 w-6 bg-brand-600 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-onyx-950">
-                06. Contract Acceptance
-              </h2>
-            </div>
-            <p className="mb-8 text-sm text-slate-500 font-medium">
-              Please finalize the agreement by confirming the following clauses:
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-bold text-ink border-b border-slate-100 pb-2">
+              6. Acknowledgements <span className="text-red-500">*</span>
+            </h2>
+            <p className="mb-4 text-sm text-slate-600">
+              All boxes below are required. Please tick each one to confirm your understanding
+              and acceptance before opening the contract:
             </p>
 
             {/* Each checkbox covers a distinct policy area */}
-            <div className="space-y-4">
+            <div className="space-y-3">
 
               {/* Terms & Conditions */}
               <label className="flex items-start gap-3 cursor-pointer">
@@ -593,135 +610,153 @@ export function ContractClient({
                 </span>
               </label>
 
-              {/* Damage liability */}
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-brand-600 cursor-pointer"
-                  checked={ackDamage}
-                  onChange={(e) => setAckDamage(e.target.checked)}
-                />
-                <span className="text-sm text-slate-700">
-                  I understand that I am fully liable for any damage, loss, or theft of the vehicle
-                  during the rental period and accept the damage liability policy.
-                </span>
-              </label>
-
-              {/* Legal use */}
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-brand-600 cursor-pointer"
-                  checked={ackLegal}
-                  onChange={(e) => setAckLegal(e.target.checked)}
-                />
-                <span className="text-sm text-slate-700">
-                  I confirm that the vehicle will not be used for any illegal activity, sub-letting,
-                  racing, or any purpose not permitted under this agreement.
-                </span>
-              </label>
-
-              {/* Fuel policy */}
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-brand-600 cursor-pointer"
-                  checked={ackFuel}
-                  onChange={(e) => setAckFuel(e.target.checked)}
-                />
-                <span className="text-sm text-slate-700">
-                  I understand the fuel policy and agree to return the vehicle with the same amount
-                  of fuel it had when I picked it up.
-                </span>
-              </label>
-
-              {/* Return policy */}
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-brand-600 cursor-pointer"
-                  checked={ackReturn}
-                  onChange={(e) => setAckReturn(e.target.checked)}
-                />
-                <span className="text-sm text-slate-700">
-                  I agree to return the vehicle to the agreed drop-off location by the agreed return
-                  date and time, and I accept the applicable late-return charges.
-                </span>
-              </label>
-
-              {/* Clean vehicle return */}
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 accent-brand-600 cursor-pointer"
-                  checked={ackClean}
-                  onChange={(e) => setAckClean(e.target.checked)}
-                />
-                <span className="text-sm text-slate-700">
-                  I agree to return the vehicle clean or incur car wash charges.
-                </span>
-              </label>
-
             </div>
+
+            {/* Progress indicator for acknowledgements */}
+            {!allAcknowledged && (
+              <p className="mt-4 text-xs text-amber-600">
+                ⚠ {[ackTerms].filter(Boolean).length} / 1
+                acknowledgements completed — this is required.
+              </p>
+            )}
+            {allAcknowledged && (
+              <p className="mt-4 text-xs text-green-600">✓ All acknowledgements confirmed.</p>
+            )}
           </section>
 
-          {/* ── Section 7: Agreement Signing ── */}
-          <section className="rounded-[2.5rem] bg-white p-8 md:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-slate-100 transition-all">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-1.5 w-6 bg-brand-600 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-onyx-950">
-                07. Protocol Execution
-              </h2>
-            </div>
+          {/* ── Section 7: Digital Signature ── */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
-            <div className="rounded-3xl bg-brand-50/50 p-6 border border-brand-100/50 space-y-4">
-              <p className="text-sm text-onyx-950 font-bold leading-relaxed">
-                A digital copy of this contract and the payment details will be sent to <span className="text-brand-600 underline decoration-2 underline-offset-4">{booking.email}</span>. First sign the contract and then make the payment.
-              </p>
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-brand-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">Verification of digital signature triggers the secure payment gateway.</p>
+
+
+            {/* Live signature preview — mimics a handwritten signature block */}
+            {/*
+            {signature.trim() && (
+              <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
+                <p className="text-xs text-slate-400 mb-1">Signature Preview</p>
+                <p className="font-bold text-2xl text-ink italic">{signature}</p>
+                <p className="mt-2 text-xs text-slate-400">
+                  Signed on{" "}
+                  {new Date().toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
               </div>
-            </div>
+            )}
+            */}
+
+            {/* Contract signed status badge */}
+            {contractSigned ? (
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-green-50 border border-green-200 px-4 py-3">
+                <svg className="h-5 w-5 text-green-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-green-800">Contract signed successfully</p>
+                  <p className="text-xs text-green-600">You may now proceed to payment.</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* BoldSign embedded signing — opens a full-screen modal iframe */}
+                {/* Disabled until the client fills all required fields and ticks the acknowledgement */}
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={() => void openBoldSign()}
+                    disabled={boldSignLoading || !canOpenContract}
+                    className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {boldSignLoading ? "Preparing contract…" : "Open Contract Agreement (Sign on this site)"}
+                  </button>
+
+                  {/* Explain why the button is locked */}
+                  {!canOpenContract && (
+                    <p className="mt-2 text-xs text-amber-600">
+                      {!requiredFieldsFilled
+                        ? "Fill in your ID number, emergency contact name & phone to unlock."
+                        : "Tick the acknowledgement box above to unlock the contract."}
+                    </p>
+                  )}
+
+                  {/* Remind the user that signing is required before payment */}
+                  {canOpenContract && !contractSigned && (
+                    <p className="mt-2 text-xs text-slate-500">
+                      You must complete the contract signing before payment is enabled.
+                    </p>
+                  )}
+
+                  {/* Show any API error directly below the button */}
+                  {boldSignError && (
+                    <p className="mt-2 text-xs text-red-600">Error preparing contract: {boldSignError}</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Full-screen modal — rendered once we have an embed URL from BoldSign */}
+            {embedUrl && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                <div className="mx-4 max-w-4xl w-full rounded-xl bg-white p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold">Sign Agreement</h3>
+                    {/* Close button dismisses the iframe without marking as signed */}
+                    <button
+                      onClick={() => setEmbedUrl(null)}
+                      className="text-xs text-slate-500 hover:text-slate-700"
+                    >
+                      Close
+                    </button>
+                  </div>
+                  {/* BoldSign renders its full signing UI inside this iframe */}
+                  <div className="h-[80vh]">
+                    <iframe
+                      src={embedUrl}
+                      title="BoldSign — Sign Agreement"
+                      className="h-full w-full rounded-md border"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* ── Validation / error message ── */}
           {validationMsg && (
-            <div className="rounded-2xl bg-red-50 border border-red-100 p-6 flex items-start gap-4 animate-in slide-in-from-top-2">
-              <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
-              <p className="text-xs font-black uppercase tracking-widest text-red-700 leading-relaxed">
-                {validationMsg}
-              </p>
-            </div>
+            <p className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              {validationMsg}
+            </p>
           )}
 
           {/* ── Proceed to payment button ── */}
-          <div className="pt-6">
-            <button
-              type="button"
-              disabled={!canProceed || uploading}
-              onClick={() => void handleProceed()}
-              className="w-full rounded-[2rem] bg-onyx-950 py-6 text-xs font-black uppercase tracking-[0.4em] text-white shadow-2xl hover:bg-brand-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:-translate-y-1 relative group overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite] transition-transform" />
-              <span className="relative z-10">{uploading ? "Processing" : "Finalize Contract"}</span>
-            </button>
+          {/* Disabled until all fields, documents, checkboxes, and signature are complete */}
+          <button
+            type="button"
+            disabled={!canProceed || uploading}
+            onClick={() => void handleProceed()}
+            className="w-full rounded-xl bg-brand-600 py-3.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {uploading ? "Uploading documents…" : "Proceed to Payment"}
+          </button>
 
-            {/* Helper text explaining why the button may still be disabled */}
-            {!canProceed && (
-              <p className="text-center text-[10px] font-bold text-slate-400 mt-6 uppercase tracking-[0.2em]">
-                Mandatory documentation & acceptance required to proceed
-              </p>
-            )}
+          {/* Helper text explaining why the button may still be disabled */}
+          {!canProceed && (
+            <p className="text-center text-xs text-slate-400">
+              {!contractSigned
+                ? "You must open and complete the contract agreement before payment is enabled."
+                : "Complete all required fields and upload all 3 documents to enable payment."}
+            </p>
+          )}
 
-            {/* Back navigation link */}
-            <Link
-              href="/my-bookings"
-              className="mt-10 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-brand-600 hover:text-onyx-950 transition-colors"
-            >
-              <ChevronLeft className="h-3 w-3" /> Back to My Bookings
-            </Link>
-          </div>
+          {/* Back navigation link */}
+          <Link
+            href="/my-bookings"
+            className="block text-center text-sm text-brand-600 hover:underline"
+          >
+            ← Back to my bookings
+          </Link>
 
         </div>
       </div>
@@ -766,11 +801,10 @@ function DocUploadSlot({
         type="button"
         onClick={() => inputRef.current?.click()}
         className={`relative flex h-36 w-full flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${file
-          ? "border-brand-600 bg-brand-50/30 shadow-inner"
-          : "border-slate-100 bg-slate-50/50 hover:border-brand-600 hover:bg-white hover:shadow-xl transition-all duration-500"
+          ? "border-brand-400 bg-brand-50"
+          : "border-slate-200 bg-slate-50 hover:border-brand-300 hover:bg-brand-50/40"
           }`}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         {preview ? (
           /* Show selected image as a thumbnail */
           // eslint-disable-next-line @next/next/no-img-element
@@ -813,10 +847,7 @@ function DocUploadSlot({
       />
 
       {/* Show the selected filename below the upload area */}
-      {file && <p className="truncate text-[10px] font-black uppercase tracking-widest text-brand-600 px-2">{file.name}</p>}
+      {file && <p className="truncate text-xs text-brand-600">{file.name}</p>}
     </div>
   );
 }
-
-// ─── SignaturePad sub-component ─────────────────────────────────────────────
-// Signature capture is now handled inside the Zoho embedded iframe.

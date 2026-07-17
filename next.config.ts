@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   images: {
@@ -16,8 +17,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "gybird.co.ke", pathname: "/**" },
     ],
   },
-  // @ts-ignore - suggested by Next.js terminal logs for Ngrok development
-  allowedDevOrigins: ['cori-vegetational-nonenvironmentally.ngrok-free.dev'],
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
 };
 
 export default nextConfig;
