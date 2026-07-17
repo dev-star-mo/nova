@@ -18,9 +18,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("denied") === "admin") {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("denied");
-      window.history.replaceState({}, "", url.toString());
+      params.delete("denied");
+      const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+      window.history.replaceState({}, "", cleanUrl);
     }
   }, []);
 
