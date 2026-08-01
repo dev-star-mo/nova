@@ -194,8 +194,32 @@ export async function POST(req: Request) {
     // ── 5. Return the embed URL to the frontend ───────────────────────────
 
     return NextResponse.json({ embed_url: embedUrl });
-  } catch (err) {
+  } catch (err: unknown) {
+    // Extract the actual BoldSign API error body when the SDK throws an AxiosError
+    // so we can surface the real reason instead of a generic "Internal error".
+    let detail: unknown = null;
+    let message = "Internal error";
+
+    if (err && typeof err === "object") {
+      // The BoldSign SDK wraps Axios errors; the response body lives at err.response.data
+      const axiosErr = err as { response?: { data?: unknown; status?: number }; message?: string };
+      if (axiosErr.response?.data) {
+        detail = axiosErr.response.data;
+        // Try to surface a human-readable message from BoldSign's error body
+        if (typeof detail === "object" && detail !== null && "message" in detail) {
+          message = String((detail as { message: unknown }).message);
+        } else if (typeof detail === "string") {
+          message = detail;
+        }
+      } else if ("message" in axiosErr && axiosErr.message) {
+        message = axiosErr.message;
+      }
+    }
+
     console.error("BoldSign create error:", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    return NextResponse.json(
+      { error: message, detail },
+      { status: 500 }
+    );
   }
 }

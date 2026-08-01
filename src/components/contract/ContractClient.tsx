@@ -78,6 +78,8 @@ export function ContractClient({
   const [boldSignLoading, setBoldSignLoading] = useState(false);
   // Error message displayed below the button if the API call fails
   const [boldSignError, setBoldSignError] = useState<string | null>(null);
+  // Raw detail from the BoldSign API error (for debugging)
+  const [boldSignErrorDetail, setBoldSignErrorDetail] = useState<unknown>(null);
   // Set to true once BoldSign fires the onDocumentSigned postMessage — gates the Pay button
   const [contractSigned, setContractSigned] = useState(false);
 
@@ -237,6 +239,7 @@ export function ContractClient({
 
   const openBoldSign = async () => {
     setBoldSignError(null);
+    setBoldSignErrorDetail(null);
     setBoldSignLoading(true);
     try {
       // Hit the server route — the API key never leaves the server.
@@ -253,8 +256,11 @@ export function ContractClient({
         }),
       });
       const json = await res.json();
-      // Throw so the catch block can surface the error message to the user
-      if (!res.ok) throw new Error(json?.error ?? "Failed to create BoldSign document");
+      // Capture the BoldSign API error detail for display
+      if (!res.ok) {
+        if (json?.detail) setBoldSignErrorDetail(json.detail);
+        throw new Error(json?.error ?? "Failed to create BoldSign document");
+      }
       // embed_url is the short-lived BoldSign signing URL for the iframe
       setEmbedUrl(json.embed_url);
     } catch (err) {
@@ -697,7 +703,14 @@ export function ContractClient({
 
                   {/* Show any API error directly below the button */}
                   {boldSignError && (
-                    <p className="mt-2 text-xs text-red-600">Error preparing contract: {boldSignError}</p>
+                    <div className="mt-2 rounded-lg bg-red-50 border border-red-200 p-3">
+                      <p className="text-xs font-semibold text-red-700">Error preparing contract: {boldSignError}</p>
+                      {!!boldSignErrorDetail && (
+                        <pre className="mt-1 text-xs text-red-600 overflow-auto max-h-40 whitespace-pre-wrap">
+                          {JSON.stringify(boldSignErrorDetail, null, 2)}
+                        </pre>
+                      )}
+                    </div>
                   )}
                 </div>
               </>
