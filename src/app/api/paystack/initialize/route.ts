@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       amount: amountKobo,
       currency: "KES",
       reference,
-      callback_url: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/checkout/success`,
+      callback_url: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"} checkout/success`,
       metadata: { booking_id: booking.id },
     }),
   });

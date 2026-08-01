@@ -239,11 +239,18 @@ export function ContractClient({
     setBoldSignError(null);
     setBoldSignLoading(true);
     try {
-      // Hit the server route — the API key never leaves the server
+      // Hit the server route — the API key never leaves the server.
+      // We also forward the three fields the user has typed so they can be
+      // pre-filled on the BoldSign contract (they may not be saved to the DB yet).
       const res = await fetch("/api/contract/boldsign-create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ booking_id: booking.id }),
+        body: JSON.stringify({
+          booking_id: booking.id,
+          id_number: idNumber.trim(),
+          emergency_contact_name: emergencyName.trim(),
+          emergency_contact_phone: emergencyPhone.trim(),
+        }),
       });
       const json = await res.json();
       // Throw so the catch block can surface the error message to the user

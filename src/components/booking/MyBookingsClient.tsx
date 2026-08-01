@@ -301,7 +301,7 @@ function EditModal({
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-onyx-950 flex items-center gap-2">
-                <Clock className="h-3 w-3 text-brand-600" /> Command Time
+                <Clock className="h-3 w-3 text-brand-600" /> Pickup Time
               </label>
               <input
                 type="datetime-local"
@@ -312,7 +312,7 @@ function EditModal({
             </div>
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-onyx-950 flex items-center gap-2">
-                <Clock className="h-3 w-3 text-brand-600" /> Release Time
+                <Clock className="h-3 w-3 text-brand-600" /> Return Time
               </label>
               <input
                 type="datetime-local"
