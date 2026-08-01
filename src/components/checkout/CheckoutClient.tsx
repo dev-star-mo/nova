@@ -323,7 +323,7 @@ export function CheckoutClient({
             {/* Live price preview */}
             {liveTotal > 0 && (
               <div className="rounded-xl bg-slate-50 px-4 py-3 space-y-1">
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-sm font-semibold">
                   <span className="text-slate-500">Updated total (USD)</span>
                   <span className="font-semibold text-slate-700">$ {liveTotal.toLocaleString("en-US")}</span>
                 </div>

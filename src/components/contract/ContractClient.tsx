@@ -461,7 +461,7 @@ export function ContractClient({
             <div className="mt-5 flex items-center justify-between rounded-xl bg-brand-50 px-4 py-3">
               <span className="text-sm font-semibold text-slate-700">Total Amount</span>
               <span className="text-lg font-bold text-brand-700">
-                KSh. {Number(booking.total_amount).toLocaleString("en-US")}
+                USD. {Number(booking.total_amount).toLocaleString("en-US")}
               </span>
             </div>
           </section>

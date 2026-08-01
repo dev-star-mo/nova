@@ -139,7 +139,7 @@ export default async function BookingDetailPage({
         <div className="rounded-[2rem] bg-onyx-950 px-8 py-7 flex items-center justify-between">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-              Total Investment
+              Total Amount Due
             </div>
             <div className="text-4xl font-bold text-white">
               $ {Number(booking.total_amount).toLocaleString()}
@@ -197,7 +197,7 @@ export default async function BookingDetailPage({
               {booking.destination && (
                 <div className="sm:col-span-2">
                   <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                    Final Destination
+                    Destination
                   </div>
                   <p className="font-bold text-onyx-950">{booking.destination}</p>
                 </div>

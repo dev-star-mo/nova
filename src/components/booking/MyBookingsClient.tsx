@@ -348,7 +348,7 @@ function EditModal({
 
           <div className="space-y-3">
             <label className="text-[10px] font-black uppercase tracking-widest text-onyx-950 flex items-center gap-2">
-              <Navigation className="h-3 w-3 text-brand-600" /> Operational Destination
+              <Navigation className="h-3 w-3 text-brand-600" /> Destination
             </label>
             <input
               className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-6 py-5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-600 focus:bg-white transition-all"
