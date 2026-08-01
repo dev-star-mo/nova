@@ -41,6 +41,9 @@ export function CheckoutClient({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fixed USD → KES conversion rate (matches the Paystack initialize API)
+  const USD_TO_KES = 130;
+
   // Edit state
   const [editing, setEditing] = useState(false);
   const [pickupAt, setPickupAt] = useState(toDateTimeLocal(booking.pickup_at));
@@ -193,11 +196,18 @@ export function CheckoutClient({
                   <dd className="text-right font-medium text-ink max-w-[60%]">{booking.special_requests}</dd>
                 </div>
               )}
-              <div className="border-t border-slate-100 pt-3 flex justify-between text-lg font-bold">
-                <dt>Total</dt>
-                <dd className="text-brand-700">
-                  $ {Number(booking.total_amount).toLocaleString("en-US")}
-                </dd>
+              <div className="border-t border-slate-100 pt-3 space-y-1">
+                <div className="flex justify-between text-sm text-slate-500">
+                  <dt>Total (USD)</dt>
+                  <dd>$ {Number(booking.total_amount).toLocaleString("en-US")}</dd>
+                </div>
+                <div className="flex justify-between text-lg font-bold">
+                  <dt>Total (KES)</dt>
+                  <dd className="text-brand-700">
+                    KES {Math.round(Number(booking.total_amount) * USD_TO_KES).toLocaleString("en-US")}
+                  </dd>
+                </div>
+                {/* <p className="text-xs text-slate-400">Rate: 1 USD = {USD_TO_KES} KES</p> */}
               </div>
             </dl>
 
@@ -312,11 +322,17 @@ export function CheckoutClient({
 
             {/* Live price preview */}
             {liveTotal > 0 && (
-              <div className="rounded-xl bg-slate-50 px-4 py-3 flex items-center justify-between text-sm font-semibold">
-                <span className="text-slate-600">Updated total</span>
-                <span className="text-brand-700 text-base">
-                   $ {liveTotal.toLocaleString("en-US")}
-                </span>
+              <div className="rounded-xl bg-slate-50 px-4 py-3 space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">Updated total (USD)</span>
+                  <span className="font-semibold text-slate-700">$ {liveTotal.toLocaleString("en-US")}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm font-semibold">
+                  <span className="text-slate-600">Updated total (KES)</span>
+                  <span className="text-brand-700 text-base">
+                    KES {Math.round(liveTotal * USD_TO_KES).toLocaleString("en-US")}
+                  </span>
+                </div>
               </div>
             )}
 

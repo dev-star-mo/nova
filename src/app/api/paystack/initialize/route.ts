@@ -40,7 +40,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
 
-  const amountKobo = Math.round(Number(booking.total_amount) * 100);
+  // Convert USD → KES at a fixed rate of 130, then to the smallest Paystack unit (× 100)
+  const USD_TO_KES = 130;
+  const amountKobo = Math.round(Number(booking.total_amount) * USD_TO_KES * 100);
   if (amountKobo < 100) {
     return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
   }
