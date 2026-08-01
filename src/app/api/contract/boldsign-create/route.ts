@@ -111,12 +111,13 @@ export async function POST(req: Request) {
     const existingFormFields = [
       // ── Renter details ──
       field("full_name", booking.full_name),
-      field("phone", booking.phone),
-      field("email", booking.email),
       field("id_number", idNumber),
-      field("emergency_contact_name", emergencyName),
+      field("phone", booking.phone),
+      //field("email", booking.email),
+      //field("emergency_contact_name", emergencyName),
       field("emergency_contact_phone", emergencyPhone),
       // ── Rental details ──
+      /*
       field("pickup_at", booking.pickup_at ? new Date(booking.pickup_at).toLocaleString("en-US") : ""),
       field("return_at", booking.return_at ? new Date(booking.return_at).toLocaleString("en-US") : ""),
       field("rental_duration", booking.rental_duration),
@@ -126,13 +127,14 @@ export async function POST(req: Request) {
       field("destination", booking.destination),
       field("special_requests", booking.special_requests),
       field("total_amount", booking.total_amount != null ? `$${Number(booking.total_amount).toLocaleString("en-US")}` : ""),
+      */
       // ── Vehicle details ──
       field("vehicle", car ? `${car.make} ${car.model} (${car.year})` : ""),
-      field("category", car?.category),
-      field("transmission", car?.transmission),
-      field("fuel_type", car?.fuel_type),
-      field("seats", car?.seats),
-      field("car_location", car?.location),
+      //field("category", car?.category),
+      //field("transmission", car?.transmission),
+      //field("fuel_type", car?.fuel_type),
+      //field("seats", car?.seats),
+      //field("car_location", car?.location),
     ].filter(Boolean) as { id: string; value: string }[];
 
     const sendResult = await templateApi.sendUsingTemplate(templateId, {
