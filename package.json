@@ -12,9 +12,11 @@
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.49.1",
+    "@types/leaflet": "^1.9.22",
     "boldsign": "^3.3.0",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.40.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.17.0",
     "next": "^16.2.4",
     "react": "^19.2.5",

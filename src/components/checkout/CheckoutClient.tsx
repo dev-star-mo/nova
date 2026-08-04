@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { computeRentalTotal } from "@/lib/pricing";
 import type { Car } from "@/types/database";
+import { LocationPickerInput } from "@/components/ui/LocationPickerInput";
 
 type BookingRow = {
   id: string;
@@ -95,6 +96,10 @@ export function CheckoutClient({
     setEditError(null);
     const p = new Date(pickupAt);
     const r = new Date(returnAt);
+    if (p < new Date(Date.now() - 60000)) {
+      setEditError("Pickup date cannot be in the past.");
+      return;
+    }
     if (r <= p) {
       setEditError("Return must be after pickup.");
       return;
@@ -255,9 +260,18 @@ export function CheckoutClient({
                 </label>
                 <input
                   type="datetime-local"
+                  min={toDateTimeLocal(new Date().toISOString())}
                   className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                   value={pickupAt}
-                  onChange={(e) => setPickupAt(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val && new Date(val) < new Date(Date.now() - 60000)) {
+                      setEditError("Pickup date cannot be in the past.");
+                    } else {
+                      setEditError(null);
+                    }
+                    setPickupAt(val);
+                  }}
                 />
               </div>
               <div>
@@ -266,32 +280,35 @@ export function CheckoutClient({
                 </label>
                 <input
                   type="datetime-local"
+                  min={pickupAt || toDateTimeLocal(new Date().toISOString())}
                   className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                   value={returnAt}
-                  onChange={(e) => setReturnAt(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val && pickupAt && new Date(val) <= new Date(pickupAt)) {
+                      setEditError("Return date must be after pickup date.");
+                    } else {
+                      setEditError(null);
+                    }
+                    setReturnAt(val);
+                  }}
                 />
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-slate-700">Pickup location</label>
-              <input
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-                value={pickupLoc}
-                onChange={(e) => setPickupLoc(e.target.value)}
-                placeholder="e.g. JKIA Terminal 1, Nairobi"
-              />
-            </div>
+            <LocationPickerInput
+              label="Pickup location"
+              value={pickupLoc}
+              onChange={setPickupLoc}
+              placeholder="e.g. JKIA Terminal 1, Nairobi"
+            />
 
-            <div>
-              <label className="text-sm font-medium text-slate-700">Drop-off location</label>
-              <input
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-                value={dropLoc}
-                onChange={(e) => setDropLoc(e.target.value)}
-                placeholder="e.g. Westlands, Nairobi"
-              />
-            </div>
+            <LocationPickerInput
+              label="Drop-off location"
+              value={dropLoc}
+              onChange={setDropLoc}
+              placeholder="e.g. Westlands, Nairobi"
+            />
 
             <div>
               <label className="text-sm font-medium text-slate-700">Driving mode</label>
@@ -323,7 +340,7 @@ export function CheckoutClient({
             {/* Live price preview */}
             {liveTotal > 0 && (
               <div className="rounded-xl bg-slate-50 px-4 py-3 space-y-1">
-                <div className="flex items-center justify-between text-sm font-semibold">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-500">Updated total (USD)</span>
                   <span className="font-semibold text-slate-700">$ {liveTotal.toLocaleString("en-US")}</span>
                 </div>

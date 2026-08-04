@@ -22,8 +22,14 @@ import { useUserSession } from "@/components/providers/user-session-provider";
 import { useAppUI } from "@/components/providers/app-ui-provider";
 import { computeRentalTotal } from "@/lib/pricing";
 import type { Car } from "@/types/database";
+import { LocationPickerInput } from "@/components/ui/LocationPickerInput";
 
 const DRIVING = ["Self-driven", "Chauffeured"] as const;
+
+function toDateTimeLocal(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 function computeDurationDays(pickupAt: string, returnAt: string): number {
   if (!pickupAt || !returnAt) return 0;
@@ -395,64 +401,71 @@ export function BookingModal() {
                   <div className="grid gap-6 sm:grid-cols-2">
                     <div className="space-y-3">
                       <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-onyx-950">
-                        <Clock className="h-3 w-3 text-brand-600" /> Pickup Date
+                        <Clock className="h-3 w-3 text-brand-600" /> Pickup Date &amp; Time
                       </label>
                       <input
                         type="datetime-local"
+                        min={toDateTimeLocal(new Date())}
                         className={`w-full rounded-2xl border px-6 py-5 text-sm font-bold focus:outline-none transition-all appearance-none cursor-pointer ${submitted && !pickupAt ? "border-red-500 bg-red-50" : "border-slate-100 bg-slate-50/50 focus:border-brand-600 focus:bg-white focus:shadow-xl shadow-brand-600/5 hover:border-brand-600/30"}`}
                         value={pickupAt}
-                        onChange={(e) => setPickupAt(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val && new Date(val) < new Date(Date.now() - 60000)) {
+                            setError("Pickup date cannot be in the past.");
+                          } else {
+                            setError(null);
+                          }
+                          setPickupAt(val);
+                        }}
                       />
                     </div>
                     <div className="space-y-3">
                       <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-onyx-950">
-                        <Clock className="h-3 w-3 text-brand-600" /> Return Date
+                        <Clock className="h-3 w-3 text-brand-600" /> Return Date &amp; Time
                       </label>
                       <input
                         type="datetime-local"
+                        min={pickupAt || toDateTimeLocal(new Date())}
                         className={`w-full rounded-2xl border px-6 py-5 text-sm font-bold focus:outline-none transition-all appearance-none cursor-pointer ${submitted && !returnAt ? "border-red-500 bg-red-50" : "border-slate-100 bg-slate-50/50 focus:border-brand-600 focus:bg-white focus:shadow-xl shadow-brand-600/5 hover:border-brand-600/30"}`}
                         value={returnAt}
-                        onChange={(e) => setReturnAt(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val && pickupAt && new Date(val) <= new Date(pickupAt)) {
+                            setError("Return date must be after pickup date.");
+                          } else {
+                            setError(null);
+                          }
+                          setReturnAt(val);
+                        }}
                       />
                     </div>
                   </div>
 
                   <div className="grid gap-6 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-onyx-950">
-                        <MapPin className="h-3 w-3 text-brand-600" /> Pickup Location
-                      </label>
-                      <input
-                        className={`w-full rounded-2xl border px-5 py-4 text-sm font-bold focus:outline-none transition-all ${fieldStatus(pickupLoc)}`}
-                        value={pickupLoc}
-                        onChange={(e) => setPickupLoc(e.target.value)}
-                        placeholder="Nairobi (Headquarters)"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-onyx-950">
-                        <MapPin className="h-3 w-3 text-brand-600" /> Dropoff Location
-                      </label>
-                      <input
-                        className={`w-full rounded-2xl border px-5 py-4 text-sm font-bold focus:outline-none transition-all ${fieldStatus(dropLoc)}`}
-                        value={dropLoc}
-                        onChange={(e) => setDropLoc(e.target.value)}
-                        placeholder="Nairobi (Central)"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-onyx-950">
-                      <Navigation className="h-3 w-3 text-brand-600" /> Destination
-                    </label>
-                    <input
-                      className={`w-full rounded-2xl border px-5 py-4 text-sm font-bold focus:outline-none transition-all ${fieldStatus(destination)}`}
-                      value={destination}
-                      onChange={(e) => setDestination(e.target.value)}
-                      placeholder="e.g. Mara Luxury Camp"
+                    <LocationPickerInput
+                      label="Pickup Location"
+                      value={pickupLoc}
+                      onChange={setPickupLoc}
+                      placeholder="Search pickup location on map..."
+                      error={submitted && !pickupLoc.trim()}
+                    />
+                    <LocationPickerInput
+                      label="Dropoff Location"
+                      value={dropLoc}
+                      onChange={setDropLoc}
+                      placeholder="Search drop-off location on map..."
+                      error={submitted && !dropLoc.trim()}
                     />
                   </div>
+
+                  <LocationPickerInput
+                    label="Destination"
+                    icon={<Navigation className="h-3 w-3 text-brand-600" />}
+                    value={destination}
+                    onChange={setDestination}
+                    placeholder="Search travel destination on map..."
+                    error={submitted && !destination.trim()}
+                  />
                 </div>
               </section>
 
