@@ -140,7 +140,7 @@ export default function UpdatePasswordPage() {
             className="rounded-xl"
           />
           <span className="font-display text-xl font-bold tracking-tight text-white">
-            NovaDrive <span className="text-brand-600">Logistics</span>
+            NovaDrive <span className="text-brand-600">Car Rentals</span>
           </span>
         </Link>
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600/10 border border-brand-600/20">

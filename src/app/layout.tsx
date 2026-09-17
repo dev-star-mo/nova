@@ -3,8 +3,8 @@ import "./globals.css";
 import { SiteShell } from "@/components/layout/SiteShell";
 
 export const metadata: Metadata = {
-  title: "NovaDrive Logistics",
-  description: "Modern car rental and logistics mobility across Kenya.",
+  title: "NovaDrive Car Rentals",
+  description: "Modern car rental services across Kenya.",
   icons: {
     icon: "/logo.png",
   },

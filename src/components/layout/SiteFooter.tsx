@@ -20,10 +20,10 @@ export function SiteFooter() {
                 className="object-contain p-1.5"
               />
             </div>
-            <span className="font-display text-xl font-bold tracking-tight">NovaDrive <span className="text-brand-600">Logistics</span></span>
+            <span className="font-display text-xl font-bold tracking-tight">NovaDrive <span className="text-brand-600">Car Rentals</span></span>
           </Link>
           <p className="max-w-xs text-sm leading-relaxed text-slate-500">
-            Pioneering premium mobility and logistics-focused rental solutions across Kenya with elegance and precision.
+            Pioneering premium mobility and car rental solutions across Kenya with elegance and precision.
           </p>
           <div className="flex gap-4">
             {[
@@ -64,7 +64,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t border-onyx-900 bg-onyx-950 py-8 text-center text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] text-slate-600">
-        © {new Date().getFullYear()} NovaDrive <span className="text-brand-600">Logistics</span>. Crafted for Excellence.
+        © {new Date().getFullYear()} NovaDrive <span className="text-brand-600">Car Rentals</span>. Crafted for Excellence.
       </div>
     </footer>
   );

@@ -47,7 +47,7 @@ export function HeroSearch() {
               Luxury On Wheels
             </span>
             <h1 className="mt-6 font-display text-4xl font-bold leading-[1.1] sm:text-6xl lg:text-7xl text-white">
-              NovaDrive <span className="text-brand-600">Logistics</span>
+              NovaDrive <span className="text-brand-600">Car Rentals</span>
             </h1>
             <p className="mt-8 text-xl text-slate-300 leading-relaxed max-w-2xl">
               Experience the pinnacle of automotive excellence. We provide bespoke rental solutions
